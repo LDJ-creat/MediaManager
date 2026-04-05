@@ -11,6 +11,7 @@ get-wechat-data/scripts/wechat-data-output/
 # juejin-publish-and-data sensitive and generated files
 juejin-publish-and-data/.auth/
 juejin-publish-and-data/test-output-*/
+juejin-publish-and-data/output/
 juejin-publish-and-data/juejin-data-output/
 juejin-publish-and-data/juejin-data-output-*/
 juejin-publish-and-data/scripts/juejin-data-output/
@@ -18,6 +19,7 @@ juejin-publish-and-data/scripts/juejin-data-output-*/
 
 # csdn-publish-and-data sensitive auth files
 csdn-publish-and-data/.auth/
+csdn-publish-and-data/output/
 
 data
 storageState.json
@@ -31,3 +33,4 @@ csdn-output/
 build.mjs
 writing-guide.md
 xhs-images/
+发布命令.md
