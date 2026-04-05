@@ -15,7 +15,7 @@ description: 选题、写作、配图并发布到 微信/CSDN/掘金
 
 ### 第一步：选题确定与文章撰写 (Writing)
 
-调用 `./article-writer/SKILL.md` 进行核心创作流程。严格按照`./article-writer/SKILL.md` 中的指引进行写作
+调用 `./article-writer/SKILL.md` 进行核心创作流程。
 
 1. **选题确认**：如果用户已提供选题则直接开始；若无，则由该 Skill 自动调用 `news-skill` 生成推荐。
 2. **提纲与写作**：按该 Skill 指引完成提纲审批并生成文章,生成的文章需要请求用户进行审稿。
