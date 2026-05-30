@@ -2,6 +2,12 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import {
+  ensureAuthDir,
+  parseKeyValueMarkdown,
+  resolveAnalyticsDir,
+  resolveAuthFileRef,
+} from "@media-manager/platform-common";
 import matter from "gray-matter";
 import type {
   ArticleInput,
@@ -12,6 +18,8 @@ import type {
   PostCliOptions,
   SkillConfig,
 } from "./types";
+
+const PLATFORM = "juejin";
 
 const DEFAULT_CONFIG: SkillConfig = {
   defaultPage: "both",
@@ -47,21 +55,6 @@ function parseList(input: string): string[] {
     .filter(Boolean);
 }
 
-function parseKeyValueMarkdown(content: string): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const rawLine of content.split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
-    const idx = line.indexOf(":");
-    if (idx <= 0) continue;
-    const key = line.slice(0, idx).trim().toLowerCase();
-    const value = line.slice(idx + 1).trim();
-    if (!key || !value) continue;
-    out[key] = value;
-  }
-  return out;
-}
-
 function getSkillRootDir(): string {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
@@ -69,7 +62,11 @@ function getSkillRootDir(): string {
 }
 
 function getSkillAuthDir(): string {
-  return path.join(getSkillRootDir(), ".auth");
+  return ensureAuthDir(PLATFORM, getSkillRootDir());
+}
+
+function resolveDefaultOutputDir(fallback: string): string {
+  return resolveAnalyticsDir(PLATFORM, getSkillRootDir(), fallback);
 }
 
 function getDefaultAuthFilePath(fileName: string): string {
@@ -136,7 +133,7 @@ export function loadSkillConfig(): SkillConfig {
 export function parseFetchCliArgs(args: string[], config: SkillConfig): FetchCliOptions {
   const options: FetchCliOptions = {
     page: config.defaultPage,
-    outputDir: config.defaultOutputDir,
+    outputDir: resolveDefaultOutputDir(config.defaultOutputDir),
     cookiePath: undefined,
     statePath: undefined,
     saveRaw: config.defaultSaveRaw,
@@ -342,25 +339,16 @@ function resolveExplicitPath(input: string): string {
 }
 
 export function resolveAuthFile(cookiePath: string | undefined, statePath: string | undefined, config: SkillConfig): AuthFileRef {
-  if (statePath) {
-    const resolved = resolveExplicitPath(statePath);
-    if (!fs.existsSync(resolved)) throw new Error(`Storage state file not found: ${resolved}`);
-    return { kind: "storage-state", path: resolved };
-  }
-  if (cookiePath) {
-    const resolved = resolveExplicitPath(cookiePath);
-    if (!fs.existsSync(resolved)) throw new Error(`Cookie file not found: ${resolved}`);
-    return { kind: "cookie", path: resolved };
-  }
-
-  const defaultState = getDefaultAuthFilePath(config.storageStateFileName);
-  if (fs.existsSync(defaultState)) return { kind: "storage-state", path: defaultState };
-
-  const defaultCookie = getDefaultAuthFilePath(config.cookieFileName);
-  if (fs.existsSync(defaultCookie)) return { kind: "cookie", path: defaultCookie };
+  const ref = resolveAuthFileRef(PLATFORM, getSkillRootDir(), {
+    explicitState: statePath,
+    explicitCookie: cookiePath,
+    storageStateFileName: config.storageStateFileName,
+    cookieFileName: config.cookieFileName,
+  });
+  if (ref) return ref;
 
   throw new Error(
-    "No auth file found. Provide --state/--cookie or place storageState.json under .auth/",
+    "No auth file found. Run `media juejin auth export`, or provide --state/--cookie, or place storageState.json under $WORKSPACE/.media-manager/auth/juejin/"
   );
 }
 

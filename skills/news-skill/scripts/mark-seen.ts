@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import { loadSourcesConfig } from "./config.js";
 import { markAsSeen } from "./dedup.js";
-import { SEEN_URLS_FILE, SELECTED_URLS_FILE } from "./paths.js";
+import { getDataPaths } from "./paths.js";
 
 function parseArgs(argv: string[]): { date?: string; status: boolean } {
   const options = {
@@ -39,7 +39,9 @@ function showStatus(): void {
 }
 
 function main(): void {
-  const args = parseArgs(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  const args = parseArgs(argv);
+  const { SEEN_URLS_FILE, SELECTED_URLS_FILE } = getDataPaths(argv);
 
   if (args.status) {
     showStatus();

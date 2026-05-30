@@ -3,6 +3,8 @@ name: xiaohongshu-publish-and-data
 description: Publish Xiaohongshu image-notes by attaching to a logged-in Chrome via CDP (--cdp-url). Use when the user asks to 发布小红书图文, 上传小红书笔记, or validate creator login in CDP Chrome.
 ---
 
+> **编排入口**：多 skill 组合流程请使用 [`media-manager`](../media-manager/SKILL.md) 总控 skill 与 `media` CLI。本 skill 为 deep-dive。
+
 # Xiaohongshu Publish And Data
 
 ## Language
@@ -23,13 +25,20 @@ Publishing **requires** a logged-in real Chrome started with remote debugging an
 
 Do **not** document or recommend publishing with only `--state` and a Playwright-launched browser. That path cannot reliably click the `发布` button on Xiaohongshu creator center.
 
-## Resolve Paths And Runtime
+## CLI（推荐）
 
-Determine this SKILL.md directory as {baseDir}. Use scripts from {baseDir}/scripts.
+执行前先 `media workspace show`。
 
-1. Use `npx tsx` if dependencies are already installed.
-2. Run `npm install` inside `{baseDir}/scripts` only when dependencies are missing.
-3. Ask the user to install Node.js LTS only when Node.js is unavailable.
+| 操作 | 命令 |
+|------|------|
+| 发布图文笔记 | `media xhs post-note --file output/{slug}/note.md --cdp-url http://127.0.0.1:9222` |
+| 抓取笔记数据 | `media xhs analytics fetch` |
+| 导出登录态 | `media xhs auth export` |
+| 检查登录 | `media xhs auth check` |
+
+## Resolve Paths And Runtime（Deep-dive）
+
+Determine this SKILL.md directory as {baseDir}. Prefer `media xhs ...` above.
 
 ## Choose The Workflow
 
@@ -105,9 +114,7 @@ Publish Workflow Progress:
 Recommended command:
 
 ```bash
-npx tsx {baseDir}/scripts/post-note.ts \
-  --file <note.md> \
-  --cdp-url http://127.0.0.1:9222
+media xhs post-note --file output/{slug}/note.md --cdp-url http://127.0.0.1:9222
 ```
 
 Rules:
@@ -124,9 +131,7 @@ Rules:
 Uses Playwright with saved `storageState.json` (same auth export flow as other platforms). No CDP Chrome required.
 
 ```bash
-npx tsx {baseDir}/scripts/fetch-analytics.ts \
-  --state {baseDir}/.auth/storageState.json \
-  --limit 10
+media xhs analytics fetch
 ```
 
 Default output: `{baseDir}/xhs-output/xhs-analytics-YYYYMMDD-HHMMSS.json` (works regardless of current working directory).

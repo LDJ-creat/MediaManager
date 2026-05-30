@@ -3,6 +3,8 @@ name: news-skill
 description: 每日科技资讯聚合工具，从多个优质RSS源（Anthropic、OpenAI、GitHub Blog、V2EX、宝玉、Karpathy、极客公园等）获取近48小时的技术内容，由你（LLM）直接完成筛选、评分、翻译和摘要，最终生成中文Markdown日报。当用户需要获取每日科技资讯、生成技术日报、查看今日AI/编程/开源/产品动态时使用。触发词：每日资讯、今日科技、技术日报、生成日报。
 ---
 
+> **编排入口**：多 skill 组合流程请使用 [`media-manager`](../media-manager/SKILL.md) 总控 skill 与 `media` CLI。本 skill 为 deep-dive。
+
 # 每日科技资讯 Skill
 
 **架构说明**：此 Skill 只负责数据 I/O（抓取文章 + 持久化去重记录）。**你（LLM）是唯一的分析引擎**，负责评分、筛选、分类、翻译和摘要。
@@ -16,12 +18,13 @@ description: 每日科技资讯聚合工具，从多个优质RSS源（Anthropic�
 ### Step 1：获取文章列表
 
 ```bash
-cd news-skill/scripts && npm run fetch
+media news fetch
+# 预览模式（不写文件）：
+media news fetch --preview
 ```
 
-- 输出 JSON 到 stdout，同时保存到 `data/latest_articles.json`
-- 自动过滤 48h 时间窗口、跨天去重、同源条目上限
-- 每条文章包含：`id`、`title`、`summary`（前300字）、`url`、`pub_date`、`source`、`source_hint`
+- 数据目录：`$WORKSPACE/.media-manager/data/news/`
+- 输出 JSON 到 stdout，同时保存到 `latest_articles.json`
 
 ### Step 2：你（LLM）完成分析
 
@@ -92,7 +95,8 @@ cd news-skill/scripts && npm run fetch
 将本次纳入日报的文章 URL 写入 `data/selected_urls.json`，然后运行：
 
 ```bash
-cd news-skill/scripts && npm run mark-seen
+media news mark-seen
+media news mark-seen --status
 ```
 
 这会将 `data/selected_urls.json` 中的 URL 追加到 `data/seen_urls.json`，并自动清理 7 天前的记录。
@@ -102,14 +106,14 @@ cd news-skill/scripts && npm run mark-seen
 ## 快速参考
 
 ```bash
-# 首次安装依赖
-cd news-skill/scripts && npm install
+# 环境检查
+media doctor
 
 # 仅抓取预览（不分析，检查源是否正常）
-cd news-skill/scripts && npm run fetch -- --preview
+media news fetch --preview
 
 # 指定时间窗口（小时）
-cd news-skill/scripts && npm run fetch -- --hours 24
+media news fetch --hours 24
 ```
 
 ## 配置文件

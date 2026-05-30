@@ -4,11 +4,16 @@ Use this flow when the user already has a valid CSDN login in a real browser ses
 
 ## Recommended command
 
-Run inside csdn-publish-and-data/scripts:
+```bash
+media csdn auth export
+```
+
+Output defaults to `$WORKSPACE/.media-manager/auth/csdn/storageState.json`.
+
+Deep-dive (from skill scripts dir):
 
 ```bash
 npx tsx export-storage-state.ts
-# default output: ../.auth/storageState.json
 ```
 
 ## Manual flow
