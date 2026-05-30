@@ -1,5 +1,5 @@
 ---
-description: 选题、写作、配图并发布到 微信/CSDN/掘金
+description: 选题、写作、配图并发布到 微信/CSDN/掘金/小红书
 ---
 
 本工作流将串联多个 Skill，实现从选题确认到多平台发布的自动化运营闭合回路。
@@ -43,10 +43,10 @@ description: 选题、写作、配图并发布到 微信/CSDN/掘金
 
 **调度流程**：
 
-1. **确认目标平台**：与用户确认本次要发布的平台列表（微信公众号 / CSDN / 掘金，可多选）。
+1. **确认目标平台**：与用户确认本次要发布的平台列表（微信公众号 / CSDN / 掘金 / 小红书，可多选）。
 2. **并行委派**：为每个目标平台各派一个 subagent；各平台发布互不依赖，**应在同一轮中并行发起**（一次消息内多个 Task），以缩短总耗时。
 3. **Subagent 任务范围**（每个平台独立一份 prompt，须包含完整上下文，不得假设 subagent 继承主会话历史）：
-   - 输入：`output/{slug}/article.md` 的绝对路径、`images/` 目录路径、平台名称
+   - 输入：`output/{slug}/` 下对应平台稿件与图片的绝对路径、平台名称（小红书使用已按平台规范生成的 `note.md` 与竖版图片）
    - 执行：读取并严格遵循对应 skill 的发布流程
    - 输出：该平台发布结果（成功则返回草稿链接 / `media_id`；失败则返回错误信息与已尝试步骤）
 4. **主 agent 汇总**：收集各 subagent 返回后，统一呈现发布结果；任一平台失败不视为整体完成，须向用户说明并可针对性重试。
@@ -58,6 +58,7 @@ description: 选题、写作、配图并发布到 微信/CSDN/掘金
 | 微信公众号 | `./post-to-wechat/SKILL.md` |
 | CSDN | `./csdn-publish-and-data/SKILL.md` |
 | 掘金 | `./juejin-publish-and-data/SKILL.md` |
+| 小红书 | `./xiaohongshu-publish-and-data/SKILL.md` |
 
 **Fallback — 不支持 subagent 时**：由主 agent 按上表顺序 inline 调用各平台 skill，逐平台执行并汇总结果。
 

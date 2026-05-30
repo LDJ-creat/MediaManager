@@ -18,6 +18,16 @@ juejin-publish-and-data/juejin-data-output-*/
 juejin-publish-and-data/scripts/juejin-data-output/
 juejin-publish-and-data/scripts/juejin-data-output-*/
 
+# xiaohongshu-publish-and-data sensitive and generated files
+xiaohongshu-publish-and-data/.auth/
+xiaohongshu-publish-and-data/.chrome-cdp-profile/
+xiaohongshu-publish-and-data/output/
+xiaohongshu-publish-and-data/xhs-output/
+xiaohongshu-publish-and-data/scripts/xhs-output/
+xiaohongshu-publish-and-data/test-output/
+xiaohongshu-publish-and-data/test-fixtures/
+xiaohongshu-publish-and-data/index.html
+
 # csdn-publish-and-data sensitive auth files
 csdn-publish-and-data/.auth/
 csdn-publish-and-data/output/
