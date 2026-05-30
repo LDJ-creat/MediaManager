@@ -1,78 +1,108 @@
-# 🚀 Media Skills - 自媒体自动化写作与运营工具集
+# MediaManager — 自媒体自动化 CLI 与 Skill 工具集
 
-这是一个面向技术自媒体的自动化工具集，旨在通过 AI 串联选题、写作、配图、发布及运营数据分析的全流程。
+面向技术自媒体的 **工作区驱动** 自动化工具：选题、写作、配图、发布、运营数据分析。通过 `media` CLI 与 `media-manager` 总控 Skill 串联全流程。
 
-## 🛠️ 1. Skill 概览
+## 安装
 
-本项目包含以下核心 Skill：
+### Mode B（终端用户，推荐）
 
-*   📝 **article-writer**: 自媒体文章写作。支持从热点选题、列提纲到全文撰写。
-*   🎨 **article-illustrator**: 文章自动配图。解析文章占位符并自动生成封面及插图。
-*   🖼️ **baoyu-image-gen**: 多平台 AI 图片生成（源自 [宝玉/baoyu-skills](https://github.com/JimLiu/baoyu-skills/tree/main/skills/baoyu-image-gen)）。支持 OpenAI, Google, OpenRouter, DashScope, 即梦, 豆包等。
-*   📤 **baoyu-post-to-wechat**: 微信公众号发布（修改自 [宝玉/baoyu-skills](https://github.com/JimLiu/baoyu-skills/tree/main/skills/baoyu-post-to-wechat)）。将文章及图片自动发送至公众号草稿箱（已优化为仅使用官方 API，无需 Playwright/浏览器）。
-*   💻 **csdn-publish-and-data**: CSDN 运营。支持文章发布草稿及 7 日动态数据抓取。
-*   🔥 **juejin-publish-and-data**: 掘金运营。支持发布草稿及创作者中心数据抓取。
-*   📕 **xiaohongshu-publish-and-data**: 小红书运营。通过 CDP 附着已登录 Chrome 发布图文笔记。
-*   📊 **get-wechat-data**: 微信公众号数据。抓取内容分析、用户分析等运营指标。
-*   📻 **news-skill**: 每日科技资讯。从 RSS 源聚合热点，辅助选题。
-
-## 📂 2. 安装与使用
-
-首先克隆本项目到本地：
 ```bash
-git clone https://github.com/LDJ-creat/media-skills.git
+npm install -g @media-manager/cli
+npx skills add LDJ-creat/MediaManager --skill media-manager -g -a cursor -a claude-code -y
+media doctor
 ```
 
-### 💡 方式 1：通过工作流使用 (推荐)
-项目中预配置了三套自动化工作流（存放在 `.agents/workflows`、`.cursor/commands`、`.claude/commend` 及 `.github/instructions`），你可以直接调用：
+安装时交互设置工作区（默认 `Documents/MediaManager-Workspace`）。详见 [docs/install.md](docs/install.md)。
 
-1.  **`daily-digest` (抓取->筛选->日报->去重)**:
-    *   **作用**：调用 `news-skill` 从 RSS 源抓取近 48 小时技术资讯，由 LLM 筛选评分并生成中文 Markdown 日报，落盘至 `news-skill/data/digests/` 并更新去重记录。
-2.  **`write-and-publish` (选题->写作->配图->发布)**:
-    *   **作用**：一键式闭环。从 `news-skill` 获取热点推荐选题(或自行指定选题)，经 `article-writer` 写作，由 `article-illustrator` 自动配图，最后同步发布到微信、CSDN、掘金草稿箱及小红书。
-3.  **`analyze-operation` (抓取->分析->反馈)**:
-    *   **作用**：运营闭环。自动抓取各大平台的阅读、粉丝等数据，生成汇总报告，并根据表现优劣自动提炼经验，更新到 `./guidance/` 目录下的写作指南中。
+### Mode A（开发者）
 
-### 🔄 方式 2：同步到全局技能使用
-如果你希望在不同的项目或 AI 编辑器（如 Claude Code, Gemini CLI, Antigravity, Copilot）中随时调用这些 Skill，可以运行同步脚本：
-*   **Windows (PowerShell)**: 运行 `.\sync-skills.ps1`
-*   **macOS/Linux (Bash)**: 运行 `./sync-skills.sh`
-脚本会自动将当前项目的 Skill 同步到你电脑对应的编辑器配置目录中。
+```bash
+git clone https://github.com/LDJ-creat/MediaManager.git
+cd MediaManager
+npm install && npm run build
+media doctor
+```
 
-## ⚙️ 3. 详细配置指南
+Repo 根目录即工作区（`.media-manager/repo-marker.json`）。
 
-### 🔑 API 及环境变量配置 (.env)
+## 核心命令
 
-部分 Skill 需要配置 API 密钥才能工作。请在对应目录下根据 `.env.example` 文件新建 `.env` 文件。
+| 命令 | 说明 |
+|------|------|
+| `media setup` | 初始化工作区与全局配置 |
+| `media workspace show` | 显示当前工作区路径 |
+| `media doctor` | 环境自检 |
+| `media news fetch` | 抓取 RSS 资讯 |
+| `media analytics fetch --all` | 抓取各平台运营数据 |
+| `media skill install` | 安装 Skill 到 Cursor / Claude |
 
-*   **baoyu-post-to-wechat (微信发布)**:
-    *   配置 `WECHAT_APP_ID` 和 `WECHAT_APP_SECRET`。
-    *   **⚠️ 注意**：需在微信公众号后台配置“IP 白名单”。若未配置，脚本运行时会给出提示。
-*   **baoyu-image-gen (图片生成)**:
-    *   支持多个平台，你需要创建 `.env` 并根据你选择的模型提供商在其中填写对应的 API Key：
-        *   `OPENAI_API_KEY`: OpenAI (DALL-E)
-        *   `GOOGLE_API_KEY`: Google (Gemini/Imagen)
-        *   `DASHSCOPE_API_KEY`: 阿里云通义万象
-        *   `OPENROUTER_API_KEY`: OpenRouter
-        *   `REPLICATE_API_TOKEN`: Replicate
-        *   `JIMENG_ACCESS_KEY_ID / SECRET`: 字节即梦
-        *   `ARK_API_KEY`: 字节豆包
+完整契约见 [docs/cli-contract.md](docs/cli-contract.md) 与 [skills/media-manager/references/cli-contract.md](skills/media-manager/references/cli-contract.md)。
 
-### 👤 登录凭证获取 (Playwright)
+## Skill 布局
 
-对于 CSDN、掘金、小红书及微信数据抓取类 Skill，由于需要浏览器登录态，请按以下步骤操作：
+所有 Skill 位于 `skills/`：
 
-1.  进入对应 Skill 目录（如 `csdn-publish-and-data`）。
-2.  在终端运行获取凭证的脚本：`npx tsx scripts/export-storage-state.ts`。
-3.  在浏览器自动开启后，完成登录并进入创作者中心页面。
-4.  回到控制台关闭脚本，登录凭证（`storageState.json`）将自动保存，后续即可免登录运行。
+| Skill | 用途 |
+|-------|------|
+| **media-manager** | 总控编排（工作流入口） |
+| article-writer | 文章写作 |
+| article-illustrator | 自动配图 |
+| news-skill | 每日科技资讯 RSS |
+| post-to-wechat | 微信公众号发布 |
+| baoyu-image-gen | AI 图片生成 |
+| csdn / juejin / xiaohongshu-publish-and-data | 平台发布与数据 |
+| get-wechat-data | 公众号数据分析 |
 
-### 🌐 RSS 资讯源配置
+子 Skill 为 deep-dive；多步流程请从 **media-manager** 或三套工作流入手。
 
-*   **news-skill**:
-    *   需要 Node.js >= 18。首次使用前在 `news-skill/scripts` 目录执行 `npm install`。
-    *   你可以按自己的喜好在 `news-skill/references/sources.json` 中增减 RSS 链接。
-    *   **🌟 推荐资源**：参考 [Awesome RSSHub Routes](https://github.com/JackyST0/awesome-rsshub-routes) 获取更多优质资讯源。
+## 工作流
+
+1. **daily-digest** — RSS → 筛选 → 中文日报 → 去重  
+2. **write-and-publish** — 选题 → 写作 → 配图 → 多平台发布  
+3. **analyze-operation** — 数据抓取 → 复盘 → 更新 guidance  
+
+定义见 `skills/media-manager/references/workflows/`，已镜像到 `.cursor/commands`、`.claude/commands`、`.github/instructions/`。
+
+## 工作区目录
+
+```text
+{workspace}/
+├── output/{slug}/article.md
+├── guidance/
+└── .media-manager/
+    ├── data/news/
+    ├── data/analytics/{platform}/
+    └── auth/{platform}/
+```
+
+详见 [docs/workspace.md](docs/workspace.md)。
+
+## 安装 Skill 到编辑器
+
+**推荐：**
+
+```bash
+media skill install              # 完整安装
+media skill install --minimal    # 仅 media-manager 总控
+```
+
+**Deprecated（开发兜底）：** `sync-skills.ps1` / `sync-skills.sh` 仍可用于 monorepo 本地同步，新用户请优先 `media skill install`。
+
+## 配置
+
+- 微信 / 图片 API：各 Skill 目录下 `.env`（参考 `.env.example`）
+- 平台登录态：`media csdn auth export` 等，凭证存于 `.media-manager/auth/`
+- RSS 源：`skills/news-skill/references/sources.json`
+
+## 开发与发布
+
+```bash
+npm run build
+npm test
+./scripts/smoke-install.ps1
+```
+
+发布流程见 [.github/workflows/release.yml](.github/workflows/release.yml)。OpenClaw / ClawHub 可选发布见 [docs/openclaw-clawhub.md](docs/openclaw-clawhub.md)。
 
 ---
-*注：本项目仅供学习与自媒体运营效率提升使用，请遵守各平台相关使用规范。*
+仅供学习与自媒体运营效率提升，请遵守各平台使用规范。

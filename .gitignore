@@ -2,43 +2,21 @@
 .venv/
 node_modules
 
-# get-wechat-data skill sensitive and generated files
-wechat-data-output/
-get-wechat-data/.auth/
-get-wechat-data/output/
-get-wechat-data/output-*/
-get-wechat-data/scripts/wechat-data-output/
+# TypeScript build outputs
+packages/**/dist/
 
-# juejin-publish-and-data sensitive and generated files
-juejin-publish-and-data/.auth/
-juejin-publish-and-data/test-output-*/
-juejin-publish-and-data/output/
-juejin-publish-and-data/juejin-data-output/
-juejin-publish-and-data/juejin-data-output-*/
-juejin-publish-and-data/scripts/juejin-data-output/
-juejin-publish-and-data/scripts/juejin-data-output-*/
+# Runtime build artifact (copied from skills/)
+packages/runtime/skills/
 
-# xiaohongshu-publish-and-data sensitive and generated files
-xiaohongshu-publish-and-data/.auth/
-xiaohongshu-publish-and-data/.chrome-cdp-profile/
-xiaohongshu-publish-and-data/output/
-xiaohongshu-publish-and-data/xhs-output/
-xiaohongshu-publish-and-data/scripts/xhs-output/
-xiaohongshu-publish-and-data/test-output/
-xiaohongshu-publish-and-data/test-fixtures/
-xiaohongshu-publish-and-data/index.html
-
-# csdn-publish-and-data sensitive auth files
-csdn-publish-and-data/.auth/
-csdn-publish-and-data/output/
+# Workspace / smoke test outputs
+output/*
+output-smoke-test/
+cover/
 
 data
 storageState.json
 cookies.json
 __pycache__/
-output/*
-cover/
-
 
 csdn-output/
 build.mjs
@@ -49,3 +27,46 @@ xhs-images/
 # Local guidance content — structure tracked via .gitkeep, md bodies stay local
 guidance/topic-selection/**/*.md
 guidance/writing/**/*.md
+
+# --- skills/ sensitive and generated files (post Phase 0 layout) ---
+skills/**/.auth/
+skills/**/.chrome-cdp-profile/
+skills/**/output/
+skills/**/output-*/
+skills/**/test-output/
+skills/**/test-output-*/
+skills/**/test-fixtures/
+skills/**/csdn-output/
+skills/**/juejin-data-output/
+skills/**/juejin-data-output-*/
+skills/**/wechat-data-output/
+skills/**/xhs-output/
+skills/**/scripts/xhs-output/
+skills/**/scripts/juejin-data-output/
+skills/**/scripts/wechat-data-output/
+skills/**/data/
+skills/**/index.html
+
+# Legacy root paths (pre skills/ migration)
+wechat-data-output/
+get-wechat-data/.auth/
+get-wechat-data/output/
+get-wechat-data/output-*/
+get-wechat-data/scripts/wechat-data-output/
+juejin-publish-and-data/.auth/
+juejin-publish-and-data/test-output-*/
+juejin-publish-and-data/output/
+juejin-publish-and-data/juejin-data-output/
+juejin-publish-and-data/juejin-data-output-*/
+juejin-publish-and-data/scripts/juejin-data-output/
+juejin-publish-and-data/scripts/juejin-data-output-*/
+xiaohongshu-publish-and-data/.auth/
+xiaohongshu-publish-and-data/.chrome-cdp-profile/
+xiaohongshu-publish-and-data/output/
+xiaohongshu-publish-and-data/xhs-output/
+xiaohongshu-publish-and-data/scripts/xhs-output/
+xiaohongshu-publish-and-data/test-output/
+xiaohongshu-publish-and-data/test-fixtures/
+xiaohongshu-publish-and-data/index.html
+csdn-publish-and-data/.auth/
+csdn-publish-and-data/output/
