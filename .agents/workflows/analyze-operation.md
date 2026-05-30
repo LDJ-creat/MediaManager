@@ -1,13 +1,16 @@
 ---
-description: 抓取 微信/CSDN/掘金 的运营数据并进行汇总分析，并根据复盘建议更新写作指南
+description: 抓取 微信/CSDN/掘金/小红书 的运营数据并进行汇总分析，并根据复盘建议更新写作指南
 ---
 
 本工作流用于定期获取各平台的阅读量、收藏量、粉丝增长等核心指标，生成分析报告，并建立从数据到创作指南的反馈闭合回路。
 
 ### 第一步：抓取多平台运营数据 (Data Fetching)
-1. **微信公众号**：使用 `./get-wechat-data/` 抓取最新指标（需确保 `cookie.json` 有效）。
-2. **CSDN**：使用 `./csdn-publish-and-data/` 获取文章统计。
-3. **掘金**：使用 `./juejin-publish-and-data/` 获取交互数据。
+
+
+1. **微信公众号**：使用 `./get-wechat-data/` 抓取最新指标（需确保 `storageState.json` 或 `cookie.json` 有效）。主 JSON 仅含 `normalized` 业务数据。
+2. **CSDN**：使用 `./csdn-publish-and-data/` 获取文章统计。主 JSON 含 `report` 标准化结果。
+3. **掘金**：使用 `./juejin-publish-and-data/` 获取交互数据。主 JSON 含 `normalized` 标准化结果。
+4. **小红书**：使用 `./xiaohongshu-publish-and-data/` 抓取最近 10 条已发布笔记的数据表现
 
 ### 第二步：跨平台数据聚合与分析 (Aggregation)
 汇总各平台产出的数据（JSON/Markdown）：

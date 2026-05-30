@@ -6,6 +6,7 @@
     "check:env": "tsx check-environment.ts",
     "check:login": "tsx check-login.ts --",
     "post:note": "tsx post-note.ts --",
+    "fetch:analytics": "tsx fetch-analytics.ts --",
     "auth:export-state": "tsx export-storage-state.ts --",
     "typecheck": "tsc --noEmit"
   },

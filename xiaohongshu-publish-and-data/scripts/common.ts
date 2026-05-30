@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import matter from "gray-matter";
 import type {
   AuthFileRef,
+  FetchCliOptions,
   NoteFrontmatter,
   NoteInput,
   PostCliOptions,
@@ -15,11 +16,17 @@ export const XHS_LOGIN_URL = "https://creator.xiaohongshu.com/login";
 export const XHS_PUBLISH_NOTE_URL =
   "https://creator.xiaohongshu.com/publish/publish?from=homepage&target=image";
 export const XHS_CREATOR_HOME_URL = "https://creator.xiaohongshu.com/";
+export const XHS_NOTE_MANAGER_URL =
+  "https://creator.xiaohongshu.com/new/note-manager?source=official";
+
+export const DEFAULT_NOTE_ANALYTICS_LIMIT = 10;
 
 const DEFAULT_CONFIG: SkillConfig = {
-  defaultOutputDir: "./xhs-output",
+  defaultOutputDir: path.join(getSkillRootDir(), "xhs-output"),
   defaultTags: [],
   defaultTimeoutMs: 60_000,
+  defaultNoteLimit: DEFAULT_NOTE_ANALYTICS_LIMIT,
+  defaultSaveRaw: false,
   cookieFileName: "cookies.json",
   storageStateFileName: "storageState.json",
 };
@@ -69,6 +76,20 @@ function getSkillAuthDir(): string {
 
 function getDefaultAuthFilePath(fileName: string): string {
   return path.join(getSkillAuthDir(), fileName);
+}
+
+function resolveConfiguredOutputDir(raw: string): string {
+  if (path.isAbsolute(raw)) return raw;
+  return path.resolve(getSkillRootDir(), raw);
+}
+
+export function getDefaultOutputDir(): string {
+  return path.join(getSkillRootDir(), "xhs-output");
+}
+
+export function resolveOutputDir(dir: string): string {
+  if (path.isAbsolute(dir)) return dir;
+  return path.resolve(process.cwd(), dir);
 }
 
 function findSkillExtendFile(): string | null {
@@ -168,13 +189,19 @@ export function loadSkillConfig(): SkillConfig {
   const parsed = parseKeyValueMarkdown(fs.readFileSync(extendFile, "utf-8"));
 
   if (parsed.default_output_dir) {
-    config.defaultOutputDir = parsed.default_output_dir;
+    config.defaultOutputDir = resolveConfiguredOutputDir(parsed.default_output_dir);
   }
   if (parsed.default_tags) {
     config.defaultTags = parseList(parsed.default_tags);
   }
   if (parsed.default_timeout_ms) {
     config.defaultTimeoutMs = parseNumber(parsed.default_timeout_ms, config.defaultTimeoutMs);
+  }
+  if (parsed.default_note_limit) {
+    config.defaultNoteLimit = parseNumber(parsed.default_note_limit, config.defaultNoteLimit);
+  }
+  if (parsed.default_save_raw) {
+    config.defaultSaveRaw = parseBool(parsed.default_save_raw);
   }
   if (parsed.cookie_file_name) {
     config.cookieFileName = parsed.cookie_file_name;
@@ -425,6 +452,102 @@ export function loadNoteInput(cli: PostCliOptions): NoteInput {
 
 export function collectInputWarnings(note: NoteInput): string[] {
   return (note as NoteInput & { _warnings?: string[] })._warnings ?? [];
+}
+
+export function normalizeDate(dateLike: string): string {
+  const trimmed = dateLike.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+  if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(:\d{2})?$/.test(trimmed)) {
+    return trimmed.slice(0, 10);
+  }
+  const parsed = new Date(trimmed);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString().slice(0, 10);
+  }
+  return trimmed;
+}
+
+export function assertPositiveLimit(limit: number): void {
+  if (!Number.isFinite(limit) || limit <= 0) {
+    throw new Error("--limit must be a positive integer");
+  }
+}
+
+export function parseFetchCliArgs(args: string[], config: SkillConfig): FetchCliOptions {
+  const options: FetchCliOptions = {
+    limit: config.defaultNoteLimit,
+    outputDir: config.defaultOutputDir,
+    cookiePath: undefined,
+    statePath: undefined,
+    saveRaw: config.defaultSaveRaw,
+    probeOnly: false,
+    headless: true,
+    timeoutMs: config.defaultTimeoutMs,
+  };
+
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i];
+    const next = args[i + 1];
+
+    if (arg === "--limit" && next) {
+      options.limit = parseNumber(next, config.defaultNoteLimit);
+      i += 1;
+      continue;
+    }
+    if (arg === "--output" && next) {
+      options.outputDir = next;
+      i += 1;
+      continue;
+    }
+    if (arg === "--cookie" && next) {
+      options.cookiePath = next;
+      i += 1;
+      continue;
+    }
+    if (arg === "--state" && next) {
+      options.statePath = next;
+      i += 1;
+      continue;
+    }
+    if (arg === "--save-raw") {
+      options.saveRaw = true;
+      continue;
+    }
+    if (arg === "--no-save-raw") {
+      options.saveRaw = false;
+      continue;
+    }
+    if (arg === "--probe") {
+      options.probeOnly = true;
+      continue;
+    }
+    if (arg === "--headful") {
+      options.headless = false;
+      continue;
+    }
+    if (arg === "--timeout" && next) {
+      options.timeoutMs = parseNumber(next, config.defaultTimeoutMs);
+      i += 1;
+    }
+  }
+
+  return options;
+}
+
+export function printFetchUsage(scriptName: string): void {
+  console.log(
+    `Usage: npx tsx ${scriptName} [options]\n\n` +
+      "Options:\n" +
+      "  --limit <n>                     Number of recent notes to fetch (default: 10)\n" +
+      "  --output <dir>                  Output directory\n" +
+      "  --state <path>                  Playwright storageState JSON path\n" +
+      "  --cookie <path>                 Cookie JSON file path\n" +
+      "  --save-raw                      Save raw crawl records (debug / parser maintenance)\n" +
+      "  --no-save-raw                   Skip raw crawl records (default)\n" +
+      "  --probe                         Verify capture pipeline only\n" +
+      "  --headful                       Run browser with GUI\n" +
+      "  --timeout <ms>                  Timeout in milliseconds",
+  );
 }
 
 export function printPostUsage(scriptName: string): void {

@@ -39,7 +39,7 @@ Fix:
 
 - ensure note body is not empty (script defaults to title when missing)
 - close popups / onboarding overlays in CDP Chrome
-- inspect failure screenshot in `scripts/xhs-output/`
+- inspect failure screenshot in `{skill-root}/xhs-output/`
 - confirm warnings show `Clicked 发布 via accessibility-cdp`
 
 ## 4. Publish clicked but success page not reached

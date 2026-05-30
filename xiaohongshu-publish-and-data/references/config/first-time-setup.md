@@ -40,10 +40,12 @@ Optional: set `XHS_CDP_URL=http://127.0.0.1:9222`.
 Create EXTEND.md at `.config/EXTEND.md` or `EXTEND.md`:
 
 ```md
-default_output_dir: ./xhs-output
+default_output_dir: xhs-output
 default_tags: AI工具, 程序员
 default_timeout_ms: 60000
 ```
+
+`default_output_dir` is resolved relative to the skill root (`xiaohongshu-publish-and-data/`), not the scripts working directory.
 
 ## 6. First publish verification
 
