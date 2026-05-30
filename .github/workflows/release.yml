@@ -15,8 +15,8 @@ jobs:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
       - run: npm install
-      - run: npm test
       - run: npm run build
+      - run: npm test
       - run: npm publish -w @media-manager/core --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
