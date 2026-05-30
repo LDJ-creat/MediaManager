@@ -13,6 +13,7 @@ Match the user's language.
 
 - Publish a Xiaohongshu image-note from Markdown or explicit CLI inputs through **CDP-attached real Chrome**.
 - Confirm the CDP Chrome session can reach the creator publish page.
+- Fetch recent published note performance metrics (views, likes, comments, collects, shares) via Playwright + saved auth state.
 
 Do not use this skill for password-based login automation, CAPTCHA bypass, QR automation, video publishing, scheduled publishing, draft-only workflows, or multi-account orchestration.
 
@@ -33,6 +34,7 @@ Determine this SKILL.md directory as {baseDir}. Use scripts from {baseDir}/scrip
 ## Choose The Workflow
 
 - Publish image-note: `post-note.ts` + `--cdp-url`
+- Fetch note analytics: `fetch-analytics.ts` + `--state` (Playwright, no CDP required)
 - Optional environment check: `check-environment.ts`
 
 Run one-time setup only when dependencies are missing or Chrome/CDP is not configured yet.
@@ -115,7 +117,28 @@ Rules:
 - Publishes immediately by clicking the red `发布` button via Chrome Accessibility + CDP; does not use `暂存离开`.
 - Xiaohongshu web drafts are browser-local and not supported.
 - Note body must not be empty; if frontmatter has no body, the script uses the title as default description.
-- If publish fails, inspect warnings (click method, validation toast) and the failure screenshot in `scripts/xhs-output/`.
+- If publish fails, inspect warnings (click method, validation toast) and the failure screenshot in `{baseDir}/xhs-output/`.
+
+## Recurring Workflow: Fetch Note Analytics
+
+Uses Playwright with saved `storageState.json` (same auth export flow as other platforms). No CDP Chrome required.
+
+```bash
+npx tsx {baseDir}/scripts/fetch-analytics.ts \
+  --state {baseDir}/.auth/storageState.json \
+  --limit 10
+```
+
+Default output: `{baseDir}/xhs-output/xhs-analytics-YYYYMMDD-HHMMSS.json` (works regardless of current working directory).
+
+Use `--save-raw` only when debugging API changes or parser issues; routine analyze-operation runs do not need raw payloads.
+
+Captured fields per note:
+
+- title, url, publishTime
+- viewCount, commentCount, likeCount, collectCount, shareCount
+
+Data source: creator note manager API (`/api/galaxy/v2/creator/note/user/posted`).
 
 ## References
 

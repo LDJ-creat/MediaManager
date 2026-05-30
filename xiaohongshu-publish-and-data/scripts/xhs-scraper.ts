@@ -12,7 +12,9 @@ import { chromium } from "playwright";
 import {
   XHS_CREATOR_HOME_URL,
   XHS_LOGIN_URL,
+  XHS_NOTE_MANAGER_URL,
   XHS_PUBLISH_NOTE_URL,
+  getDefaultOutputDir,
 } from "./common.js";
 import {
   DEFAULT_IGNORE_DEFAULT_ARGS,
@@ -27,15 +29,53 @@ import {
   waitForPublishSuccess,
 } from "./publish-button.js";
 import type {
+  AnalyticsCapturedResponse,
   AuthFileRef,
   CapturedResponse,
   CookieFileEntry,
+  CrawlResult,
   LoginCheckResult,
   NoteInput,
   PublishRequest,
   PublishResult,
   StorageStateFile,
 } from "./types.js";
+
+const NOTE_LIST_API_PATH = "/api/galaxy/v2/creator/note/user/posted";
+const NOTE_LIST_CAPTURE_KEYWORDS = ["note", "posted", "creator", "galaxy"];
+const LOGIN_HINTS = ["登录", "扫码登录", "验证码登录"];
+
+interface CrawlAnalyticsOptions {
+  authFile: AuthFileRef;
+  limit: number;
+  timeoutMs: number;
+  headless: boolean;
+}
+
+interface PostedNoteRecord {
+  id?: string;
+  display_title?: string;
+  time?: string;
+  type?: string;
+  sticky?: boolean;
+  view_count?: number;
+  comments_count?: number;
+  likes?: number;
+  collected_count?: number;
+  shared_count?: number;
+  xsec_token?: string;
+  xsec_source?: string;
+}
+
+interface PostedNotesPayload {
+  code?: number;
+  success?: boolean;
+  msg?: string;
+  data?: {
+    notes?: PostedNoteRecord[];
+    page?: number;
+  };
+}
 
 const XHS_LOGIN_BOX_SELECTOR = "div[class*='login-box']";
 const XHS_PUBLISH_SUCCESS_URL_PATTERN = "**/publish/success?**";
@@ -566,7 +606,7 @@ export async function publishNote(request: PublishRequest): Promise<PublishResul
       let failureScreenshot: string | undefined;
       if (!request.headless || request.cdpUrl) {
         try {
-          const outputDir = path.resolve(process.cwd(), "xhs-output");
+          const outputDir = getDefaultOutputDir();
           fs.mkdirSync(outputDir, { recursive: true });
           failureScreenshot = path.join(outputDir, `xhs-publish-failure-${Date.now()}.png`);
           await page.screenshot({ path: failureScreenshot, fullPage: true });
@@ -614,7 +654,7 @@ export async function publishNote(request: PublishRequest): Promise<PublishResul
       try {
         const page = session.context.pages().slice(-1)[0];
         if (page) {
-          const outputDir = path.resolve(process.cwd(), "xhs-output");
+          const outputDir = getDefaultOutputDir();
           fs.mkdirSync(outputDir, { recursive: true });
           screenshotPath = path.join(outputDir, `xhs-publish-failure-${Date.now()}.png`);
           await page.screenshot({ path: screenshotPath, fullPage: true });
@@ -640,6 +680,170 @@ export async function publishNote(request: PublishRequest): Promise<PublishResul
       screenshotPath,
     };
   } finally {
+    await closeBrowserSession(session);
+  }
+}
+
+function shouldCaptureAnalytics(response: Response): boolean {
+  const requestType = response.request().resourceType();
+  if (requestType !== "xhr" && requestType !== "fetch") return false;
+  const url = response.url().toLowerCase();
+  if (!url.includes("xiaohongshu.com")) return false;
+  return NOTE_LIST_CAPTURE_KEYWORDS.some((keyword) => url.includes(keyword));
+}
+
+async function safeParseResponse(response: Response): Promise<unknown> {
+  const contentType = response.headers()["content-type"] || "";
+  if (contentType.includes("application/json") || contentType.includes("text/json")) {
+    try {
+      return await response.json();
+    } catch {
+      try {
+        return { parseError: "response.json failed", fallbackText: await response.text() };
+      } catch (error) {
+        return {
+          parseError: "response body unavailable",
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    }
+  }
+
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { text };
+  }
+}
+
+function isPostedNotesPayload(payload: unknown): payload is PostedNotesPayload {
+  if (!payload || typeof payload !== "object") return false;
+  const notes = (payload as PostedNotesPayload).data?.notes;
+  return Array.isArray(notes);
+}
+
+function extractPostedNotesPayload(responses: AnalyticsCapturedResponse[]): PostedNotesPayload | undefined {
+  for (let index = responses.length - 1; index >= 0; index -= 1) {
+    const response = responses[index];
+    if (!response.url.includes(NOTE_LIST_API_PATH)) continue;
+    if (!isPostedNotesPayload(response.payload)) continue;
+    return response.payload;
+  }
+  return undefined;
+}
+
+async function fetchPostedNotesPage(page: Page, pageIndex: number): Promise<PostedNotesPayload> {
+  return page.evaluate(async ({ apiPath, pageNum }) => {
+    const response = await fetch(`${apiPath}?tab=0&page=${pageNum}`, {
+      credentials: "include",
+      headers: {
+        accept: "application/json, text/plain, */*",
+      },
+    });
+    return response.json();
+  }, { apiPath: NOTE_LIST_API_PATH, pageNum: pageIndex });
+}
+
+async function collectRecentPostedNotes(
+  page: Page,
+  responses: AnalyticsCapturedResponse[],
+  limit: number,
+): Promise<PostedNoteRecord[]> {
+  const collected: PostedNoteRecord[] = [];
+  const seenIds = new Set<string>();
+
+  const appendNotes = (notes: PostedNoteRecord[] | undefined): void => {
+    if (!Array.isArray(notes)) return;
+    for (const note of notes) {
+      if (!note?.id || seenIds.has(note.id)) continue;
+      seenIds.add(note.id);
+      collected.push(note);
+      if (collected.length >= limit) break;
+    }
+  };
+
+  const firstPayload = extractPostedNotesPayload(responses);
+  let nextPageMarker = firstPayload?.data?.page;
+  appendNotes(firstPayload?.data?.notes);
+
+  let pageIndex = 1;
+  while (collected.length < limit && nextPageMarker !== -1) {
+    const payload = await fetchPostedNotesPage(page, pageIndex);
+    responses.push({
+      pageType: "note-manager",
+      url: `${NOTE_LIST_API_PATH}?tab=0&page=${pageIndex}`,
+      status: 200,
+      contentType: "application/json",
+      capturedAt: new Date().toISOString(),
+      payload,
+    });
+
+    const beforeCount = collected.length;
+    appendNotes(payload.data?.notes);
+    nextPageMarker = payload.data?.page;
+
+    if (collected.length === beforeCount) break;
+    if (!payload.data?.notes?.length) break;
+    pageIndex += 1;
+  }
+
+  return collected.slice(0, limit);
+}
+
+export function detectLoginIssue(items: Array<Pick<CrawlResult, "finalUrl" | "bodyPreview">>): string | null {
+  for (const item of items) {
+    const haystack = `${item.finalUrl}\n${item.bodyPreview ?? ""}`;
+    if (item.finalUrl.startsWith(XHS_LOGIN_URL) || LOGIN_HINTS.some((hint) => haystack.includes(hint))) {
+      return `Detected login page or expired auth state: ${item.finalUrl}`;
+    }
+  }
+  return null;
+}
+
+export async function crawlNoteAnalytics(options: CrawlAnalyticsOptions): Promise<CrawlResult[]> {
+  const session = await createBrowserSession(options.authFile, options.headless);
+  const page = await session.context.newPage();
+  const responses: AnalyticsCapturedResponse[] = [];
+
+  page.on("response", async (response) => {
+    if (!shouldCaptureAnalytics(response)) return;
+    responses.push({
+      pageType: "note-manager",
+      url: response.url(),
+      status: response.status(),
+      contentType: response.headers()["content-type"] || "",
+      capturedAt: new Date().toISOString(),
+      payload: await safeParseResponse(response),
+    });
+  });
+
+  try {
+    await page.goto(XHS_NOTE_MANAGER_URL, {
+      waitUntil: "domcontentloaded",
+      timeout: options.timeoutMs,
+    });
+    await page.waitForLoadState("networkidle", { timeout: options.timeoutMs }).catch(() => undefined);
+    await page.waitForResponse(
+      (response) => response.url().includes(NOTE_LIST_API_PATH) && response.ok(),
+      { timeout: options.timeoutMs },
+    ).catch(() => undefined);
+    await page.waitForTimeout(1000);
+
+    await collectRecentPostedNotes(page, responses, options.limit);
+
+    const result: CrawlResult = {
+      pageType: "note-manager",
+      targetUrl: XHS_NOTE_MANAGER_URL,
+      finalUrl: page.url(),
+      pageTitle: await page.title().catch(() => ""),
+      bodyPreview: await page.locator("body").innerText().then((text) => text.slice(0, 2000)).catch(() => ""),
+      responses,
+    };
+
+    return [result];
+  } finally {
+    await page.close().catch(() => undefined);
     await closeBrowserSession(session);
   }
 }

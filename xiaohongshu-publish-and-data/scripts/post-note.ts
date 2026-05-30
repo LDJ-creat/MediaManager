@@ -10,6 +10,7 @@ import {
   parsePostCliArgs,
   printPostUsage,
   resolveOptionalAuthFile,
+  resolveOutputDir,
 } from "./common.js";
 import { publishNote } from "./xhs-scraper.js";
 import type { PublishResult } from "./types.js";
@@ -79,7 +80,7 @@ async function main(): Promise<void> {
 
   result.warnings.unshift(...inputWarnings);
 
-  const outputDir = path.resolve(process.cwd(), options.outputDir);
+  const outputDir = resolveOutputDir(options.outputDir);
   ensureDirSync(outputDir);
   const stamp = nowStamp();
   const jsonPath = path.join(outputDir, `xhs-post-result-${stamp}.json`);
