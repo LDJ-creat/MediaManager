@@ -12,6 +12,7 @@
 *   📤 **baoyu-post-to-wechat**: 微信公众号发布（修改自 [宝玉/baoyu-skills](https://github.com/JimLiu/baoyu-skills/tree/main/skills/baoyu-post-to-wechat)）。将文章及图片自动发送至公众号草稿箱（已优化为仅使用官方 API，无需 Playwright/浏览器）。
 *   💻 **csdn-publish-and-data**: CSDN 运营。支持文章发布草稿及 7 日动态数据抓取。
 *   🔥 **juejin-publish-and-data**: 掘金运营。支持发布草稿及创作者中心数据抓取。
+*   📕 **xiaohongshu-publish-and-data**: 小红书运营。通过 CDP 附着已登录 Chrome 发布图文笔记。
 *   📊 **get-wechat-data**: 微信公众号数据。抓取内容分析、用户分析等运营指标。
 *   📻 **news-skill**: 每日科技资讯。从 RSS 源聚合热点，辅助选题。
 
@@ -28,7 +29,7 @@ git clone https://github.com/LDJ-creat/media-skills.git
 1.  **`daily-digest` (抓取->筛选->日报->去重)**:
     *   **作用**：调用 `news-skill` 从 RSS 源抓取近 48 小时技术资讯，由 LLM 筛选评分并生成中文 Markdown 日报，落盘至 `news-skill/data/digests/` 并更新去重记录。
 2.  **`write-and-publish` (选题->写作->配图->发布)**:
-    *   **作用**：一键式闭环。从 `news-skill` 获取热点推荐选题(或自行指定选题)，经 `article-writer` 写作，由 `article-illustrator` 自动配图，最后同步发布到微信、CSDN、掘金草稿箱。
+    *   **作用**：一键式闭环。从 `news-skill` 获取热点推荐选题(或自行指定选题)，经 `article-writer` 写作，由 `article-illustrator` 自动配图，最后同步发布到微信、CSDN、掘金草稿箱及小红书。
 3.  **`analyze-operation` (抓取->分析->反馈)**:
     *   **作用**：运营闭环。自动抓取各大平台的阅读、粉丝等数据，生成汇总报告，并根据表现优劣自动提炼经验，更新到 `./guidance/` 目录下的写作指南中。
 
@@ -59,7 +60,7 @@ git clone https://github.com/LDJ-creat/media-skills.git
 
 ### 👤 登录凭证获取 (Playwright)
 
-对于 CSDN、掘金和微信数据抓取类 Skill，由于需要浏览器登录态，请按以下步骤操作：
+对于 CSDN、掘金、小红书及微信数据抓取类 Skill，由于需要浏览器登录态，请按以下步骤操作：
 
 1.  进入对应 Skill 目录（如 `csdn-publish-and-data`）。
 2.  在终端运行获取凭证的脚本：`npx tsx scripts/export-storage-state.ts`。

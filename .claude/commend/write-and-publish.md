@@ -1,5 +1,5 @@
 ---
-description: 选题、写作、配图并发布到 微信/CSDN/掘金
+description: 选题、写作、配图并发布到 微信/CSDN/掘金/小红书
 ---
 
 本工作流将串联多个 Skill，实现从选题确认到多平台发布的自动化运营闭合回路。
@@ -18,9 +18,10 @@ description: 选题、写作、配图并发布到 微信/CSDN/掘金
 
 ### 第三步：多平台发布 (Multi-platform Publishing)
 从 `./output/{slug}/` 中提取最终稿件和图片，发布至目标平台的草稿箱。
-1. **微信公众号**：调用 `./baoyu-post-to-wechat/` 下的发布脚本。
-2. **CSDN**：调用 `./csdn-publish-and-data/` 下的发布脚本。
-3. **掘金**：调用 `./juejin-publish-and-data/` 下的发布脚本。
+1. **微信公众号**：调用 `./post-to-wechat/SKILL.md`。
+2. **CSDN**：调用 `./csdn-publish-and-data/SKILL.md`。
+3. **掘金**：调用 `./juejin-publish-and-data/SKILL.md`。
+4. **小红书**：调用 `./xiaohongshu-publish-and-data/SKILL.md`（使用平台专用 `note.md` 与竖版图片，**直接发布**，非草稿）。
 
 ### 第四步：归档汇总
 在任务完成后，记录本次发布的 `media_id` 或链接，并将 `./output/{slug}/` 标记为已完成。
