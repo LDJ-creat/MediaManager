@@ -27,9 +27,25 @@ description: 抓取 微信/CSDN/掘金 的运营数据并进行汇总分析，�
 2. **交互讨论**：若用户对建议有异议或希望优化，与之进行交流直至达成共识。
 3. **用户确认**：询问用户是否同意将建议更新至 `./guidance/` 下的对应文件。
 
-### 第五步：更新写作指南 (Update Guidance)
-在用户明确同意后，更新或创建 `./guidance/` 目录下的相关规范：
-- **选题改进** → 更新 `./guidance/topic-selection.md`
+### 第五步：更新指南 (Update Guidance)
+在用户明确同意后，根据改进建议的性质，更新或创建 `./guidance/` 目录下的对应文件。
+
+#### 选题指南（`./guidance/topic-selection/`）
+
+- **通用选题改进** → 更新 `./guidance/topic-selection/general.md`
+- **平台专属选题改进** → 更新 `./guidance/topic-selection/platform/{platform}.md`
+  - `{platform}` 取值示例：`wechat`、`csdn`、`juejin`、`xiaohongshu` 等
+
+#### 写作指南（`./guidance/writing/`）
+
 - **通用风格改进** → 更新 `./guidance/writing/general.md`
 - **平台专属改进** → 更新 `./guidance/writing/platform/{platform}.md`
-*注：若对应的目录或文件不存在，应自动创建。*
+- **特定场景/题材的详细写作指南**（如某类文章 SOP、访谈稿规范等）→ 在 `./guidance/writing/` 下新建独立文件
+  - 命名建议：使用语义清晰的文件名，如 `{题材或场景}-sop.md`、`{场景}_guide.md`
+  - 若内容足够独立、可复用，应拆分为独立文件，而非全部塞入 `general.md`
+  - **可选**：在 `general.md` 中添加对该文件的引用链接；是否添加由 LLM 自行判断——当该指南是通用流程的重要补充、或读者需要知道其存在时才添加
+
+#### 通用规则
+
+- 若对应的目录或文件不存在，应自动创建
+- 更新已有文件时，追加或修订相关章节，保持文档结构清晰，避免重复堆砌
