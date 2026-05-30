@@ -3,9 +3,18 @@ name: article-illustrator
 description: "为写好的 Markdown 文章设计配图提示词并生成图片。自动解析文章中的配图占位符，设计封面图和正文配图的生成提示词，调用 baoyu-image-gen 生成图片，将图片存放到文章对应目录，并将图片路径回写到文章中。触发场景：用户完成文章写作后需要配图、为已有 Markdown 文章生成插图、帮我配图、生成文章图片。"
 ---
 
+> **编排入口**：多 skill 组合流程请使用 [`media-manager`](../media-manager/SKILL.md) 总控 skill 与 `media` CLI。本 skill 为 deep-dive。
+
 # Article Illustrator
 
 为文章设计并生成配图。读取 `article-writer` 输出的文章，解析配图占位符，设计提示词，调用 `baoyu-image-gen` 生成图片，回写文章。
+
+## CLI 协作
+
+```bash
+media workspace show
+media image gen --prompt "..." --image output/{slug}/fig-1.png
+```
 
 ## 目录结构约定
 

@@ -10,7 +10,19 @@ metadata:
         - npx
 ---
 
+> **编排入口**：多 skill 组合流程请使用 [`media-manager`](../media-manager/SKILL.md) 总控 skill 与 `media` CLI。本 skill 为 deep-dive。
+
 # Post to WeChat Official Account
+
+## CLI（推荐）
+
+```bash
+media workspace show
+media wechat check-env
+media wechat post <article.md> [options]
+```
+
+需在 skill 目录或工作区配置 `.env`（`WECHAT_APP_ID` / `WECHAT_APP_SECRET`）。路径相对于工作区。
 
 ## Language
 
