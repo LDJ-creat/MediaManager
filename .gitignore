@@ -1,0 +1,33 @@
+.env
+node_modules
+
+# get-wechat-data skill sensitive and generated files
+wechat-data-output/
+get-wechat-data/.auth/
+get-wechat-data/output/
+get-wechat-data/output-*/
+get-wechat-data/scripts/wechat-data-output/
+
+# juejin-publish-and-data sensitive and generated files
+juejin-publish-and-data/.auth/
+juejin-publish-and-data/test-output-*/
+juejin-publish-and-data/juejin-data-output/
+juejin-publish-and-data/juejin-data-output-*/
+juejin-publish-and-data/scripts/juejin-data-output/
+juejin-publish-and-data/scripts/juejin-data-output-*/
+
+# csdn-publish-and-data sensitive auth files
+csdn-publish-and-data/.auth/
+
+data
+storageState.json
+cookies.json
+__pycache__/
+output/*
+cover/
+
+
+csdn-output/
+build.mjs
+writing-guide.md
+xhs-images/
