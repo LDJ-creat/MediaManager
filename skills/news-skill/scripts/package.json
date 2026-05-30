@@ -1,0 +1,21 @@
+{
+  "name": "news-skill-scripts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fetch": "tsx fetch-rss.ts --",
+    "fetch:preview": "tsx fetch-rss.ts -- --preview",
+    "mark-seen": "tsx mark-seen.ts --",
+    "mark-seen:status": "tsx mark-seen.ts -- --status",
+    "test": "tsx ../tests/fetcher-helpers.test.ts && tsx ../tests/dedup.test.ts && tsx ../tests/renderer.test.ts && tsx ../tests/preview.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.8.0"
+  }
+}

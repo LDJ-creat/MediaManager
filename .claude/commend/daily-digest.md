@@ -6,7 +6,7 @@ description: 调用 news-skill 抓取 RSS、筛选评分并生成每日科技资
 
 ### 第一步：抓取 RSS 文章 (Fetch)
 
-在 `news-skill` 目录执行 `python scripts/fetch_rss.py`，获取近 48 小时文章并保存到 `data/latest_articles.json`。若用户指定时间窗口，使用 `--hours`；若仅检查源是否正常，使用 `--preview`。
+在 `news-skill/scripts` 目录执行 `npm run fetch`（首次使用前 `npm install`），获取近 48 小时文章并保存到 `data/latest_articles.json`。若用户指定时间窗口，使用 `npm run fetch -- --hours 24`；若仅检查源是否正常，使用 `npm run fetch -- --preview`。
 
 ### 第二步：筛选、评分与摘要 (Analyze)
 
@@ -18,4 +18,4 @@ description: 调用 news-skill 抓取 RSS、筛选评分并生成每日科技资
 
 ### 第四步：记录去重 (Dedup)
 
-将纳入日报的文章 URL 写入 `data/selected_urls.json`，然后执行 `python scripts/mark_seen.py` 更新去重记录。
+将纳入日报的文章 URL 写入 `data/selected_urls.json`，然后执行 `npm run mark-seen` 更新去重记录。

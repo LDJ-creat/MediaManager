@@ -70,6 +70,7 @@ git clone https://github.com/LDJ-creat/media-skills.git
 ### 🌐 RSS 资讯源配置
 
 *   **news-skill**:
+    *   需要 Node.js >= 18。首次使用前在 `news-skill/scripts` 目录执行 `npm install`。
     *   你可以按自己的喜好在 `news-skill/references/sources.json` 中增减 RSS 链接。
     *   **🌟 推荐资源**：参考 [Awesome RSSHub Routes](https://github.com/JackyST0/awesome-rsshub-routes) 获取更多优质资讯源。
 
