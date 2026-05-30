@@ -1,0 +1,19 @@
+{
+  "name": "media-manager-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "skills/csdn-publish-and-data/scripts",
+    "skills/juejin-publish-and-data/scripts",
+    "skills/get-wechat-data/scripts",
+    "skills/xiaohongshu-publish-and-data/scripts"
+  ],
+  "scripts": {
+    "build": "npm run build -w @media-manager/core && npm run build -w @media-manager/platform-common && npm run build -w @media-manager/runtime && npm run build -w @media-manager/cli",
+    "test": "npm run test -w @media-manager/core && npm run test -w @media-manager/cli",
+    "media": "node packages/cli/dist/main.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

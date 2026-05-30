@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "kind": "media-manager-repo",
+  "description": "Mode A developer workspace marker. When present at repo root, workspace resolves to this directory."
+}
