@@ -3,9 +3,19 @@ name: article-writer
 description: 技术自媒体文章写作工作流。支持自定义选题；无明确素材时优先委派 subagent 调用 news-skill 获取热点并筛选选题，否则 inline 执行同等流程。经提纲审批后按写作指南完成写作，输出含配图占位符的 Markdown 文章，支持审查修改与写作经验复盘。使用场景：用户需要写技术博客、自媒体文章、AI/编程/产品类科普文；支持平台参数（xiaohongshu、wechat）加载对应平台写作规范。触发词：写文章、写一篇、帮我写、创作文章、生成文章。
 ---
 
+> **编排入口**：多 skill 组合流程请使用 [`media-manager`](../media-manager/SKILL.md) 总控 skill 与 `media` CLI。本 skill 为 deep-dive。
+
 # Article Writer
 
-技术自媒体文章写作工作流。输出物：`output/{slug}/article.md`，其中包含配图占位符，供 `article-illustrator` skill 使用。
+技术自媒体文章写作工作流。输出物：`$WORKSPACE/output/{slug}/article.md`，其中包含配图占位符，供 `article-illustrator` skill 使用。
+
+## CLI 协作
+
+```bash
+media workspace show
+media news fetch          # 无选题时获取 RSS 素材
+media news mark-seen      # 日报完成后去重
+```
 
 ## 强制门禁
 

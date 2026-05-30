@@ -11,9 +11,16 @@ metadata:
         - npx
 ---
 
+> **编排入口**：多 skill 组合流程请使用 [`media-manager`](../media-manager/SKILL.md) 总控 skill 与 `media` CLI。本 skill 为 deep-dive。
+
 # Image Generation (AI SDK)
 
-Official API-based image generation. Supports OpenAI, Google, OpenRouter, DashScope (阿里通义万象), Jimeng (即梦), Seedream (豆包) and Replicate providers.
+## CLI（推荐）
+
+```bash
+media workspace show
+media image gen --prompt "描述" --image output/{slug}/cover.png
+```
 
 ## Script Directory
 
