@@ -26,7 +26,7 @@ Fix:
 
 - rerun with `--timeout 60000`
 - rerun with `--headful`
-- keep `--save-raw` enabled and inspect final URL plus page state
+- add `--save-raw` and inspect final URL plus page state in raw output
 - update capture keywords in scripts/csdn-scraper.ts if CSDN changes request names
 
 ## 3. Article table is incomplete

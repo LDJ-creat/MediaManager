@@ -10,42 +10,18 @@ Each fetch run creates:
 
 - csdn-analytics-YYYYMMDD-HHMMSS.json
 - csdn-analytics-YYYYMMDD-HHMMSS.md
-- raw-YYYYMMDD-HHMMSS/ when `--save-raw` is enabled
+- raw-YYYYMMDD-HHMMSS/ only when `--save-raw` is explicitly enabled
 
 ### Analytics JSON structure
 
 - generatedAt
-- page
-- start, end
-- outputDir
-- records
-- normalized
-- metrics
-
-### normalized
-
-- overview
-  - totalViewCount
-  - totalDiggCount
-  - totalCommentCount
-  - totalCollectCount
-- articles
-  - articleId
-  - title
-  - status
-  - publishTime
-  - lastModifiedAt
-  - articleUrl
-  - viewCount
-  - diggCount
-  - commentCount
-  - collectCount
-- dailyTotals
-  - date
-  - viewCount
-  - diggCount
-  - commentCount
-  - collectCount
+- report
+  - range (start, end)
+  - overview (articleCount, viewCount, diggCount, commentCount, collectCount, etc.)
+  - articles[]
+    - articleId, title, url
+    - summary (publishTime, viewCount, diggCount, commentCount, favoriteCount, ...)
+    - recent7Days[] (daily stats per article)
 
 ## Post files
 

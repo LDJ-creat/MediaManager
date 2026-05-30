@@ -141,7 +141,7 @@ If redirected to login page or creator page body shows relogin content, stop and
 Recommended command:
 
 ```bash
-npx tsx {baseDir}/scripts/fetch-analytics.ts --page both --state <storageState.json> --save-raw --output <output-dir>
+npx tsx {baseDir}/scripts/fetch-analytics.ts --page both --state <storageState.json> --output <output-dir>
 ```
 
 Supported options:
@@ -152,7 +152,7 @@ Supported options:
 - --output <dir>
 - --state <path>
 - --cookie <path>
-- --save-raw / --no-save-raw
+- --save-raw / --no-save-raw (default: off)
 - --probe
 - --headful
 - --timeout <ms>

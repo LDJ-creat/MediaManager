@@ -8,7 +8,7 @@ const DEFAULT_CONFIG: SkillConfig = {
   defaultPage: "both",
   defaultToken: undefined,
   defaultOutputDir: "./wechat-data-output",
-  defaultSaveRaw: true,
+  defaultSaveRaw: false,
   defaultTimeoutMs: 30_000,
   cookieFileName: "cookies.json",
   storageStateFileName: "storageState.json",
@@ -261,7 +261,7 @@ export function printUsage(scriptName: string): void {
     "  --cookie <path>             Cookie JSON file path\n" +
     "  --state <path>              Playwright storageState JSON path\n" +
     "  --proxy <server>            Proxy server for Playwright (e.g. socks5://127.0.0.1:7897)\n" +
-    "  --save-raw / --no-save-raw  Save raw captured payloads\n" +
+    "  --save-raw / --no-save-raw  Save raw captured payloads (default: off)\n" +
     "  --probe                     Probe login and capture capability only\n" +
     "  --headful                   Run browser with GUI (default headless)\n" +
     "  --timeout <ms>              Page wait timeout in milliseconds");

@@ -52,7 +52,7 @@ Example:
 ```md
 default_page: both
 default_output_dir: ./wechat-data-output
-default_save_raw: true
+default_save_raw: false
 default_timeout_ms: 30000
 cookie_file_name: cookies.json
 storage_state_file_name: storageState.json
@@ -76,13 +76,13 @@ npx tsx check-login.ts --page both
 Run inside get-wechat-data/scripts:
 
 ```bash
-npx tsx fetch-analytics.ts --page both --state ../.auth/storageState.json --save-raw --output ../output-auto-token
+npx tsx fetch-analytics.ts --page both --state ../.auth/storageState.json --output ../output-auto-token
 ```
 
 Expected artifacts:
 
 - ../output-auto-token/wechat-analytics-YYYYMMDD-HHMMSS.json
 - ../output-auto-token/wechat-analytics-YYYYMMDD-HHMMSS.md
-- ../output-auto-token/raw-YYYYMMDD-HHMMSS/
+- ../output-auto-token/raw-YYYYMMDD-HHMMSS/ (only with --save-raw)
 
 See [output-format.md](../output-format.md) for the normalized JSON structure and Markdown sections.

@@ -10,8 +10,8 @@ import {
   printUsage,
   resolveAuthFile,
 } from "./common";
-import { buildCuratedMetrics, buildNormalizedAnalytics, dedupeCrawlResults } from "./normalize";
-import { crawlAnalytics, detectLoginIssue, filterMetricsByDate } from "./wechat-scraper";
+import { buildNormalizedAnalytics, dedupeCrawlResults } from "./normalize";
+import { crawlAnalytics, detectLoginIssue } from "./wechat-scraper";
 import type {
   ConcretePageType,
   ContentArticleItem,
@@ -140,14 +140,9 @@ function renderContentArticles(output: FetchOutput): string[] {
 }
 
 function toMarkdown(output: FetchOutput): string {
-  const byPage = output.records.map((record) => {
-    const metricCount = output.metrics.filter((m) => m.pageType === record.pageType).length;
-    return `- ${record.pageType}: responses=${record.responses.length}, metrics=${metricCount}, finalUrl=${record.finalUrl}`;
-  }).join("\n");
-
-  const topMetrics = output.metrics.slice(0, 20)
-    .map((m) => `| ${m.pageType} | ${m.date} | ${m.metric} | ${m.value} |`)
-    .join("\n");
+  const articleCount = output.normalized.content?.articles.length ?? 0;
+  const contentTrendDays = output.normalized.content?.dailyTotals.length ?? 0;
+  const userTrendDays = output.normalized.user?.dailyTotals.length ?? 0;
 
   return [
     "# WeChat Analytics Fetch Report",
@@ -156,25 +151,18 @@ function toMarkdown(output: FetchOutput): string {
     `- Page scope: ${output.page}`,
     `- Date range: ${output.start ?? "-"} ~ ${output.end ?? "-"}`,
     `- Output dir: ${output.outputDir}`,
-    `- Record count: ${output.records.length}`,
-    `- Metric count: ${output.metrics.length}`,
-    "",
-    "## Page Summary",
-    byPage || "- none",
+    `- Articles: ${articleCount}`,
+    `- Content trend days: ${contentTrendDays}`,
+    `- User trend days: ${userTrendDays}`,
     "",
     ...renderContentSummary(output),
     ...renderUserSummary(output),
     ...renderContentTrend(output),
     ...renderUserTrend(output),
     ...renderContentArticles(output),
-    "## Curated Metrics (first 20)",
-    "| page | date | metric | value |",
-    "|---|---|---|---|",
-    topMetrics || "| - | - | - | - |",
-    "",
     "## Notes",
-    "- Data source priority: network responses > fallback window state.",
-    "- If metric count is low, verify cookie validity and page permissions.",
+    "- Main JSON contains normalized analytics only; use --save-raw for full crawl payloads.",
+    "- If values look empty, verify cookie validity and page permissions.",
   ].join("\n");
 }
 
@@ -210,7 +198,17 @@ async function main(): Promise<void> {
 
   const dedupedRecords = dedupeCrawlResults(records);
   const normalized = filterNormalized(buildNormalizedAnalytics(dedupedRecords), options.start, options.end);
-  const metrics = filterMetricsByDate(buildCuratedMetrics(normalized), options.start, options.end);
+
+  const stamp = nowStamp();
+  let rawDir: string | undefined;
+  if (options.saveRaw) {
+    rawDir = path.join(outputDir, `raw-${stamp}`);
+    ensureDirSync(rawDir);
+    for (const record of dedupedRecords) {
+      const file = path.join(rawDir, `${record.pageType}.json`);
+      fs.writeFileSync(file, JSON.stringify(record, null, 2), "utf-8");
+    }
+  }
 
   const output: FetchOutput = {
     generatedAt: new Date().toISOString(),
@@ -218,35 +216,27 @@ async function main(): Promise<void> {
     start: options.start,
     end: options.end,
     outputDir,
-    records: dedupedRecords,
-    metrics,
+    rawDir,
     normalized,
   };
 
-  const stamp = nowStamp();
   const jsonPath = path.join(outputDir, `wechat-analytics-${stamp}.json`);
   const mdPath = path.join(outputDir, `wechat-analytics-${stamp}.md`);
 
   fs.writeFileSync(jsonPath, JSON.stringify(output, null, 2), "utf-8");
   fs.writeFileSync(mdPath, toMarkdown(output), "utf-8");
 
-  if (options.saveRaw) {
-    const rawDir = path.join(outputDir, `raw-${stamp}`);
-    ensureDirSync(rawDir);
-    for (const record of dedupedRecords) {
-      const file = path.join(rawDir, `${record.pageType}.json`);
-      fs.writeFileSync(file, JSON.stringify(record, null, 2), "utf-8");
-    }
-    console.log(`[OK] raw records saved: ${rawDir}`);
-  }
-
   if (options.probeOnly) {
     console.log("Probe mode enabled: capture pipeline verified.");
   }
 
+  if (rawDir) {
+    console.log(`[OK] raw records saved: ${rawDir}`);
+  }
+
   console.log(`[OK] output json: ${jsonPath}`);
   console.log(`[OK] output markdown: ${mdPath}`);
-  console.log(`[OK] metrics: ${metrics.length}`);
+  console.log(`[OK] articles: ${normalized.content?.articles.length ?? 0}`);
 }
 
 main().catch((error) => {

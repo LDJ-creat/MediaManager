@@ -18,7 +18,7 @@ const DEFAULT_CONFIG: SkillConfig = {
   defaultCategories: [],
   defaultTags: [],
   defaultOriginalFlag: true,
-  defaultSaveRaw: true,
+  defaultSaveRaw: false,
   defaultTimeoutMs: 30_000,
   cookieFileName: "cookies.json",
   storageStateFileName: "storageState.json",
@@ -477,7 +477,7 @@ export function printAnalyticsUsage(scriptName: string): void {
     "  --output <dir>                  Output directory\n" +
     "  --state <path>                  Playwright storageState JSON path\n" +
     "  --cookie <path>                 Cookie JSON file path\n" +
-    "  --save-raw / --no-save-raw      Save raw captured payloads\n" +
+    "  --save-raw / --no-save-raw      Save raw captured payloads (default: off)\n" +
     "  --probe                         Probe login and capture only\n" +
     "  --headful                       Run browser with GUI\n" +
     "  --timeout <ms>                  Timeout in milliseconds");

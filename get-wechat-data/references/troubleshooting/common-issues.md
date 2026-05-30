@@ -30,7 +30,7 @@ Fix:
 - save raw and inspect final URL and network behavior
 - if a manual --token was provided, retry without --token so the script can auto-discover the live token
 
-## 3. Metric count too low
+## 3. Normalized output looks empty or incomplete
 
 Possible reasons:
 
@@ -41,7 +41,7 @@ Possible reasons:
 Fix:
 
 - remove date filter and retry
-- keep --save-raw and inspect raw files
+- add --save-raw and inspect raw files
 - update capture keywords in scripts/wechat-scraper.ts
 
 ## 4. Summary values look correct but trend output is noisy

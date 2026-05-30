@@ -52,7 +52,7 @@ default_post_mode: draft
 default_tags: 掘金,技术
 default_column: 我的专栏
 default_visibility: 公开
-default_save_raw: true
+default_save_raw: false
 default_timeout_ms: 45000
 cookie_file_name: cookies.json
 storage_state_file_name: storageState.json
@@ -76,7 +76,7 @@ npx tsx check-login.ts --page both
 Fetch:
 
 ```bash
-npx tsx fetch-analytics.ts --page both --state ../.auth/storageState.json --save-raw --output ../output-juejin
+npx tsx fetch-analytics.ts --page both --state ../.auth/storageState.json --output ../output-juejin
 ```
 
 Draft post:

@@ -32,10 +32,7 @@ This skill fetches analytics from WeChat Official Account backend pages:
 - Content analysis page
 - User analysis page
 
-The fetch result now contains two layers:
-
-- raw capture layer: original page/network payloads for debugging and future parser updates
-- normalized layer: compact business-facing output with summary cards, daily trends, and content article items
+The fetch result contains a normalized layer: compact business-facing output with summary cards, daily trends, and content article items. Full raw crawl payloads are written only when `--save-raw` is explicitly enabled.
 
 Supported environments:
 
@@ -131,8 +128,10 @@ If redirected to login page or body shows relogin content, ask user to refresh l
 Recommended command:
 
 ```bash
-npx tsx {baseDir}/scripts/fetch-analytics.ts --page both --state <storageState.json> --save-raw --output <output-dir>
+npx tsx {baseDir}/scripts/fetch-analytics.ts --page both --state <storageState.json> --output <output-dir>
 ```
+
+Add `--save-raw` only when debugging API changes or parser maintenance.
 
 Recommended output directories:
 
@@ -143,10 +142,10 @@ Examples:
 
 ```bash
 # run from {baseDir}/scripts and store artifacts in {baseDir}/output-auto-token
-npx tsx fetch-analytics.ts --page both --state ../.auth/storageState.json --save-raw --output ../output-auto-token
+npx tsx fetch-analytics.ts --page both --state ../.auth/storageState.json --output ../output-auto-token
 
 # optional date range filter
-npx tsx fetch-analytics.ts --page content --state ../.auth/storageState.json --start 2026-03-01 --end 2026-03-10 --save-raw --output ../output-content
+npx tsx fetch-analytics.ts --page content --state ../.auth/storageState.json --start 2026-03-01 --end 2026-03-10 --output ../output-content
 ```
 
 Common options:
@@ -158,6 +157,7 @@ Common options:
 - --output <dir>
 - --state <path>
 - --cookie <path>
+- --save-raw / --no-save-raw (default: off)
 - --probe
 - --headful
 - --timeout <ms>
@@ -168,36 +168,33 @@ Always report:
 
 - output JSON file path
 - output Markdown file path
-- whether raw data folder is generated
 - normalized summary values when present
-- curated metric count
-- if count is unexpectedly low, include troubleshooting hints from [references/troubleshooting/common-issues.md](./references/troubleshooting/common-issues.md)
+- article count when content page was fetched
+- raw folder path only if --save-raw was used
+- if values are unexpectedly empty, include troubleshooting hints from [references/troubleshooting/common-issues.md](./references/troubleshooting/common-issues.md)
 
 Expected artifacts in the chosen output directory:
 
 - wechat-analytics-YYYYMMDD-HHMMSS.json
 - wechat-analytics-YYYYMMDD-HHMMSS.md
-- raw-YYYYMMDD-HHMMSS/ when --save-raw is enabled
+- raw-YYYYMMDD-HHMMSS/ only when --save-raw is enabled
 
 JSON output fields:
 
-- records: deduplicated raw page captures and matched network responses
 - normalized.content.summary: read, like, share, collection, comment
 - normalized.content.dailyTotals: daily content trend rows
 - normalized.content.articles: published article list with refDate, title, totalReadUv, readUvRatio
 - normalized.user.summary: newUser, cancelUser, netgainUser, cumulateUser
 - normalized.user.dailyTotals: daily user trend rows
-- metrics: compatibility layer with curated metrics only, derived from normalized output
+- rawDir: optional path when --save-raw was used
 
 Markdown output sections:
 
-- Page Summary
 - Content Summary
 - User Summary
 - Content Daily Trend
 - User Daily Trend
 - Content Articles
-- Curated Metrics
 
 ## Safety and Boundaries
 
