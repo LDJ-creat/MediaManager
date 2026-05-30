@@ -2,7 +2,15 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import {
+  ensureAuthDir,
+  parseKeyValueMarkdown,
+  resolveAnalyticsDir,
+  resolveAuthFileRef,
+} from "@media-manager/platform-common";
 import type { AuthFileRef, CliOptions, PageType, SkillConfig } from "./types";
+
+const PLATFORM = "wechat";
 
 const DEFAULT_CONFIG: SkillConfig = {
   defaultPage: "both",
@@ -40,21 +48,6 @@ function parseNumber(input: string, fallback: number): number {
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
-function parseKeyValueMarkdown(content: string): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const rawLine of content.split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
-    const idx = line.indexOf(":");
-    if (idx <= 0) continue;
-    const key = line.slice(0, idx).trim().toLowerCase();
-    const value = line.slice(idx + 1).trim();
-    if (!key || !value) continue;
-    out[key] = value;
-  }
-  return out;
-}
-
 function getSkillRootDir(): string {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
@@ -62,7 +55,11 @@ function getSkillRootDir(): string {
 }
 
 function getSkillAuthDir(): string {
-  return path.join(getSkillRootDir(), ".auth");
+  return ensureAuthDir(PLATFORM, getSkillRootDir());
+}
+
+function resolveDefaultOutputDir(fallback: string): string {
+  return resolveAnalyticsDir(PLATFORM, getSkillRootDir(), fallback);
 }
 
 function getDefaultAuthFilePath(fileName: string): string {
@@ -126,7 +123,7 @@ export function parseCliArgs(args: string[], config: SkillConfig): CliOptions {
   const options: CliOptions = {
     page: config.defaultPage,
     token: config.defaultToken,
-    outputDir: config.defaultOutputDir,
+    outputDir: resolveDefaultOutputDir(config.defaultOutputDir),
     cookiePath: undefined,
     saveRaw: config.defaultSaveRaw,
     probeOnly: false,
@@ -281,27 +278,15 @@ export function resolveAuthFile(
   explicitStatePath: string | undefined,
   config: SkillConfig,
 ): AuthFileRef {
-  const explicitState = resolveExplicitFile(explicitStatePath, "Storage state file");
-  if (explicitState) {
-    return { kind: "storage-state", path: explicitState };
-  }
-
-  const explicitCookie = resolveExplicitFile(explicitCookiePath, "Cookie file");
-  if (explicitCookie) {
-    return { kind: "cookie", path: explicitCookie };
-  }
-
-  const defaultState = getDefaultAuthFilePath(config.storageStateFileName);
-  if (fs.existsSync(defaultState)) {
-    return { kind: "storage-state", path: defaultState };
-  }
-
-  const defaultCookie = getDefaultAuthFilePath(config.cookieFileName);
-  if (fs.existsSync(defaultCookie)) {
-    return { kind: "cookie", path: defaultCookie };
-  }
+  const ref = resolveAuthFileRef(PLATFORM, getSkillRootDir(), {
+    explicitState: explicitStatePath,
+    explicitCookie: explicitCookiePath,
+    storageStateFileName: config.storageStateFileName,
+    cookieFileName: config.cookieFileName,
+  });
+  if (ref) return ref;
 
   throw new Error(
-    "No auth state found. Provide --state with a Playwright storageState.json, or --cookie with cookies.json, or create one at .auth/storageState.json"
+    "No auth state found. Run `media wechat auth export`, or provide --state/--cookie, or place storageState.json under $WORKSPACE/.media-manager/auth/wechat/"
   );
 }

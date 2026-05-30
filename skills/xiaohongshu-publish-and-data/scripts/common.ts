@@ -2,6 +2,12 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import {
+  ensureAuthDir,
+  parseKeyValueMarkdown,
+  resolveAnalyticsDir,
+  resolveAuthFileRef,
+} from "@media-manager/platform-common";
 import matter from "gray-matter";
 import type {
   AuthFileRef,
@@ -20,6 +26,8 @@ export const XHS_NOTE_MANAGER_URL =
   "https://creator.xiaohongshu.com/new/note-manager?source=official";
 
 export const DEFAULT_NOTE_ANALYTICS_LIMIT = 10;
+
+const PLATFORM = "xhs";
 
 const DEFAULT_CONFIG: SkillConfig = {
   defaultOutputDir: path.join(getSkillRootDir(), "xhs-output"),
@@ -49,21 +57,6 @@ function parseList(input: string): string[] {
     .filter(Boolean);
 }
 
-function parseKeyValueMarkdown(content: string): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const rawLine of content.split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
-    const idx = line.indexOf(":");
-    if (idx <= 0) continue;
-    const key = line.slice(0, idx).trim().toLowerCase();
-    const value = line.slice(idx + 1).trim();
-    if (!key || !value) continue;
-    out[key] = value;
-  }
-  return out;
-}
-
 function getSkillRootDir(): string {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
@@ -71,7 +64,7 @@ function getSkillRootDir(): string {
 }
 
 function getSkillAuthDir(): string {
-  return path.join(getSkillRootDir(), ".auth");
+  return ensureAuthDir(PLATFORM, getSkillRootDir());
 }
 
 function getDefaultAuthFilePath(fileName: string): string {
@@ -84,7 +77,7 @@ function resolveConfiguredOutputDir(raw: string): string {
 }
 
 export function getDefaultOutputDir(): string {
-  return path.join(getSkillRootDir(), "xhs-output");
+  return resolveAnalyticsDir(PLATFORM, getSkillRootDir(), path.join(getSkillRootDir(), "xhs-output"));
 }
 
 export function resolveOutputDir(dir: string): string {
@@ -338,28 +331,16 @@ export function resolveAuthFile(
   explicitStatePath: string | undefined,
   config: SkillConfig,
 ): AuthFileRef {
-  const explicitState = resolveExplicitFile(explicitStatePath, "Storage state file");
-  if (explicitState) {
-    return { kind: "storage-state", path: explicitState };
-  }
-
-  const explicitCookie = resolveExplicitFile(explicitCookiePath, "Cookie file");
-  if (explicitCookie) {
-    return { kind: "cookie", path: explicitCookie };
-  }
-
-  const defaultState = getDefaultAuthFilePath(config.storageStateFileName);
-  if (fs.existsSync(defaultState)) {
-    return { kind: "storage-state", path: defaultState };
-  }
-
-  const defaultCookie = getDefaultAuthFilePath(config.cookieFileName);
-  if (fs.existsSync(defaultCookie)) {
-    return { kind: "cookie", path: defaultCookie };
-  }
+  const ref = resolveAuthFileRef(PLATFORM, getSkillRootDir(), {
+    explicitState: explicitStatePath,
+    explicitCookie: explicitCookiePath,
+    storageStateFileName: config.storageStateFileName,
+    cookieFileName: config.cookieFileName,
+  });
+  if (ref) return ref;
 
   throw new Error(
-    "No auth state found. Provide --state, --cookie, or create .auth/storageState.json"
+    "No auth state found. Run `media xhs auth export`, or provide --state/--cookie, or place storageState.json under $WORKSPACE/.media-manager/auth/xhs/"
   );
 }
 

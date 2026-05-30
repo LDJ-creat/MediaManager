@@ -9,21 +9,28 @@ metadata:
         - npx
 ---
 
+> **编排入口**：多 skill 组合流程请使用 [`media-manager`](../media-manager/SKILL.md) 总控 skill 与 `media` CLI。本 skill 为 deep-dive。
+
 # Juejin Publish And Data
 
 ## Language
 
 Match the user's language.
 
-## Script Directory
+## CLI（推荐）
 
-Determine this SKILL.md directory as {baseDir}, then use {baseDir}/scripts/<name>.ts.
+执行前先 `media workspace show`。Auth：`$WORKSPACE/.media-manager/auth/juejin/`。
 
-Runtime resolution for ${RUN_TS}:
+| 操作 | 命令 |
+|------|------|
+| 保存草稿 | `media juejin post --file output/{slug}/article.md --draft` |
+| 抓取运营数据 | `media juejin analytics fetch` |
+| 导出登录态 | `media juejin auth export` |
+| 检查登录 | `media juejin auth check` |
 
-1. if dependencies are installed -> npx tsx
-2. else run npm install in scripts first
-3. if Node.js is missing -> ask user to install Node.js LTS
+## Script Directory（Deep-dive）
+
+Determine this SKILL.md directory as {baseDir}. Prefer `media juejin ...` above.
 
 ## What This Skill Does
 
@@ -57,10 +64,10 @@ This skill does not perform login automation, QR code handling, SMS verification
 
 Auth file discovery order:
 
-1. CLI --state path
-2. CLI --cookie path
-3. <skillRoot>/.auth/storageState.json
-4. <skillRoot>/.auth/cookies.json
+1. CLI `--state` / `--cookie`
+2. `$WORKSPACE/.media-manager/auth/juejin/storageState.json`
+3. `$WORKSPACE/.media-manager/auth/juejin/cookies.json`
+4. `<skillRoot>/.auth/`（兼容）
 
 ## Preferences (EXTEND.md)
 
@@ -131,7 +138,7 @@ npx tsx {baseDir}/scripts/check-environment.ts
 ### Step 3: Login state check
 
 ```bash
-npx tsx {baseDir}/scripts/check-login.ts --page both --state <storageState.json>
+media juejin auth check
 ```
 
 If redirected to login page or creator page body shows relogin content, stop and refresh login state.
@@ -141,7 +148,7 @@ If redirected to login page or creator page body shows relogin content, stop and
 Recommended command:
 
 ```bash
-npx tsx {baseDir}/scripts/fetch-analytics.ts --page both --state <storageState.json> --output <output-dir>
+media juejin analytics fetch
 ```
 
 Supported options:
@@ -162,7 +169,7 @@ Supported options:
 Default draft-first command:
 
 ```bash
-npx tsx {baseDir}/scripts/post-article.ts --file <article.md> --state <storageState.json> --draft
+media juejin post --file output/{slug}/article.md --draft
 ```
 
 Supported options:

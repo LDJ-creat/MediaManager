@@ -2,7 +2,7 @@ import fs from "node:fs";
 import { loadSourcesConfig } from "./config.js";
 import { filterSeen } from "./dedup.js";
 import { fetchAll } from "./fetcher.js";
-import { DATA_DIR, LATEST_ARTICLES_FILE, SEEN_URLS_FILE } from "./paths.js";
+import { ensureDataDir, getDataPaths } from "./paths.js";
 
 function parseArgs(argv: string[]): {
   hours?: number;
@@ -36,7 +36,9 @@ function parseArgs(argv: string[]): {
 }
 
 async function main(): Promise<void> {
-  const args = parseArgs(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  const args = parseArgs(argv);
+  const { DATA_DIR, LATEST_ARTICLES_FILE, SEEN_URLS_FILE } = getDataPaths(argv);
   const [sources, params] = loadSourcesConfig();
   const timeWindow = args.hours ?? params.TIME_WINDOW_HOURS ?? 48;
   const maxPerSource = params.MAX_PER_SOURCE ?? 5;
@@ -63,7 +65,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+  ensureDataDir(DATA_DIR);
   fs.writeFileSync(
     LATEST_ARTICLES_FILE,
     JSON.stringify(items, null, 2),

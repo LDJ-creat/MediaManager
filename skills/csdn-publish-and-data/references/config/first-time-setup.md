@@ -1,88 +1,53 @@
 # First-Time Setup
 
+## CLI（推荐）
+
+```bash
+media workspace show
+media doctor
+media csdn auth export    # 登录后导出凭证 → $WORKSPACE/.media-manager/auth/csdn/
+media csdn auth check
+media csdn analytics fetch
+media csdn post --file output/{slug}/article.md --draft
+```
+
+Auth 优先路径：`$WORKSPACE/.media-manager/auth/csdn/storageState.json`（兼容 skill 内 `.auth/`）。
+
+---
+
 This skill is designed to work on Windows, macOS, and Linux.
 
 ## 1. Install runtime
 
-Preferred runtime: Node.js 20+.
+Preferred runtime: Node.js 20+. Install `@media-manager/cli` or run from MediaManager monorepo after `npm run build`.
 
-- macOS: brew install node
-- Linux/Ubuntu: install Node.js LTS from official source or NodeSource
-- Windows: install Node.js LTS from the official installer
+## 2. Install script dependencies（Deep-dive）
 
-This skill uses npx tsx to run TypeScript scripts.
-
-## 2. Install script dependencies
-
-Run inside csdn-publish-and-data/scripts:
+When running scripts directly (not via `media`):
 
 ```bash
+cd skills/csdn-publish-and-data/scripts
 npm install
 npx playwright install chromium
 ```
 
-If Ubuntu is missing browser libraries, see [../ubuntu/headless-setup.md](../ubuntu/headless-setup.md).
+Ubuntu missing libraries: [../ubuntu/headless-setup.md](../ubuntu/headless-setup.md).
 
 ## 3. Prepare auth file
 
-Preferred file:
+Preferred: `$WORKSPACE/.media-manager/auth/csdn/storageState.json`
 
-- .auth/storageState.json
+Fallback: `cookies.json` in the same directory.
 
-Fallback file:
-
-- .auth/cookies.json
-
-Recommended storage state locations:
-
-- .auth/storageState.json
-
-Use [../auth/export-storage-state.md](../auth/export-storage-state.md) if you need to export a fresh login state.
+Export guide: [../auth/export-storage-state.md](../auth/export-storage-state.md).
 
 ## 4. Optional defaults
 
-Create EXTEND.md at one of these locations:
-
-- .config/EXTEND.md
-- EXTEND.md
-
-Supported keys:
-
-- default_output_dir
-- default_categories
-- default_tags
-- default_original_flag
-- default_save_raw
-- default_timeout_ms
-- cookie_file_name
-- storage_state_file_name
-
-Example:
-
-```md
-default_output_dir: ./csdn-output
-default_categories: 后端, 工具
-default_tags: typescript, playwright
-default_original_flag: true
-default_save_raw: false
-default_timeout_ms: 30000
-cookie_file_name: cookies.json
-storage_state_file_name: storageState.json
-```
+Create `EXTEND.md` at `.config/EXTEND.md` or skill root. See SKILL.md for keys.
 
 ## 5. Quick verification
 
 ```bash
-npx tsx check-environment.ts
-npx tsx check-login.ts --page both
-```
-
-## 6. Recommended first runs
-
-```bash
-npx tsx fetch-analytics.ts --page both --state ../.auth/storageState.json --output ../output
-```
-
-```bash
-npx tsx post-article.ts --file ../example.md --draft --state ../.auth/storageState.json --output ../output
+media csdn auth check
+media csdn analytics fetch --preview   # if supported; else media doctor
 ```

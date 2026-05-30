@@ -1,86 +1,39 @@
 # First-Time Setup
 
-This skill is designed to work on Windows, macOS, and Linux.
+## CLI（推荐）
+
+```bash
+media workspace show
+media doctor
+media juejin auth export
+media juejin auth check
+media juejin analytics fetch
+media juejin post --file output/{slug}/article.md --draft
+```
+
+Auth：`$WORKSPACE/.media-manager/auth/juejin/storageState.json`
+
+---
 
 ## 1. Install runtime
 
-Preferred runtime: Node.js 20+.
+Node.js 20+ and `@media-manager/cli`, or monorepo dev build.
 
-- macOS: brew install node
-- Linux/Ubuntu: install Node.js LTS from official source or NodeSource
-- Windows: install Node.js LTS from the official installer
-
-This skill uses npx tsx to run TypeScript scripts.
-
-## 2. Install script dependencies
-
-Run inside juejin-publish-and-data/scripts:
+## 2. Script dependencies（Deep-dive）
 
 ```bash
+cd skills/juejin-publish-and-data/scripts
 npm install
 npx playwright install chromium
 ```
 
-## 3. Prepare auth file
+## 3. Auth file
 
-Preferred file:
+See [../cookie/export-storage-state.md](../cookie/export-storage-state.md).
 
-- .auth/storageState.json
-
-Fallback file:
-
-- .auth/cookies.json
-
-Recommended storage state locations:
-
-- .auth/storageState.json
-
-Export storageState after you are already logged into Juejin creator pages and can see real creator data.
-
-## 4. Optional defaults
-
-Create EXTEND.md at:
-
-- .config/EXTEND.md
-
-Example:
-
-```md
-default_page: both
-default_output_dir: ./juejin-data-output
-default_post_mode: draft
-default_tags: 掘金,技术
-default_column: 我的专栏
-default_visibility: 公开
-default_save_raw: false
-default_timeout_ms: 45000
-cookie_file_name: cookies.json
-storage_state_file_name: storageState.json
-```
-
-Notes:
-
-- default_output_dir is resolved relative to the current working directory
-- default_post_mode is draft-only
-- storageState.json is more reliable than cookies.json for creator pages
-
-## 5. Quick verification
+## 4. Verification
 
 ```bash
-npx tsx check-environment.ts
-npx tsx check-login.ts --page both
-```
-
-## 6. Recommended first run
-
-Fetch:
-
-```bash
-npx tsx fetch-analytics.ts --page both --state ../.auth/storageState.json --output ../output-juejin
-```
-
-Draft post:
-
-```bash
-npx tsx post-article.ts --file ../demo/article.md --state ../.auth/storageState.json --draft --headful
+media juejin auth check
+media juejin analytics fetch
 ```

@@ -9,21 +9,28 @@ metadata:
         - npx
 ---
 
+> **编排入口**：多 skill 组合流程请使用 [`media-manager`](../media-manager/SKILL.md) 总控 skill 与 `media` CLI。本 skill 为 deep-dive。
+
 # Get WeChat Analytics Data
 
 ## Language
 
 Match the user's language.
 
-## Script Directory
+## CLI（推荐）
 
-Determine this SKILL.md directory as {baseDir}, then use {baseDir}/scripts/<name>.ts.
+执行前先 `media workspace show`。Auth：`$WORKSPACE/.media-manager/auth/wechat/`。
 
-Runtime resolution for ${RUN_TS}:
+| 操作 | 命令 |
+|------|------|
+| 抓取公众号数据 | `media wechat analytics fetch` |
+| 导出登录态 | `media wechat auth export` |
+| 检查登录 | `media wechat auth check` |
+| 发布文章 | `media wechat post ...`（见 post-to-wechat skill） |
 
-1. if dependencies are installed -> npx tsx
-2. else run npm install in scripts first
-3. if Node.js is missing -> ask user to install Node.js LTS
+## Script Directory（Deep-dive）
+
+Determine this SKILL.md directory as {baseDir}. Prefer `media wechat analytics fetch`.
 
 ## What This Skill Does
 
@@ -56,10 +63,10 @@ Token handling:
 
 Auth file discovery order:
 
-1. CLI --state path
-2. CLI --cookie path
-3. <skillRoot>/.auth/storageState.json
-4. <skillRoot>/.auth/cookies.json
+1. CLI `--state` / `--cookie`
+2. `$WORKSPACE/.media-manager/auth/wechat/storageState.json`
+3. `$WORKSPACE/.media-manager/auth/wechat/cookies.json`
+4. `<skillRoot>/.auth/`（兼容）
 
 ## Preferences (EXTEND.md)
 
@@ -128,7 +135,7 @@ If redirected to login page or body shows relogin content, ask user to refresh l
 Recommended command:
 
 ```bash
-npx tsx {baseDir}/scripts/fetch-analytics.ts --page both --state <storageState.json> --output <output-dir>
+media wechat analytics fetch
 ```
 
 Add `--save-raw` only when debugging API changes or parser maintenance.

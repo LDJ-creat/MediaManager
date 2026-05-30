@@ -3,6 +3,8 @@ name: csdn-publish-and-data
 description: Save Markdown articles into the CSDN draft box and fetch CSDN creator analytics/article performance data with storageState.json or cookies.json. Use when the user asks to 保存 CSDN 草稿, 准备 CSDN 文章草稿, 批量生成 CSDN 草稿, 抓取 CSDN 创作中心运营数据, 获取最近文章的 7 日动态数据, 校验 CSDN 创作中心登录态, or export CSDN creator storage state.
 ---
 
+> **编排入口**：多 skill 组合流程请使用 [`media-manager`](../media-manager/SKILL.md) 总控 skill 与 `media` CLI。本 skill 为 deep-dive。
+
 # CSDN Publish And Data
 
 ## Language
@@ -18,15 +20,20 @@ Match the user's language.
 
 Do not use this skill for password-based login, CAPTCHA bypass, multi-account automation, or hidden-field guessing.
 
-## Resolve Paths And Runtime
+## CLI（推荐）
 
-Determine this SKILL.md directory as {baseDir}. Use scripts from {baseDir}/scripts.
+执行前先 `media workspace show`。Auth 默认在 `$WORKSPACE/.media-manager/auth/csdn/`。
 
-Resolve ${RUN_TS} like this:
+| 操作 | 命令 |
+|------|------|
+| 保存草稿 | `media csdn post --file output/{slug}/article.md --draft` |
+| 抓取运营数据 | `media csdn analytics fetch` |
+| 导出登录态 | `media csdn auth export` |
+| 检查登录 | `media csdn auth check` |
 
-1. Use `npx tsx` if dependencies are already installed.
-2. Run `npm install` inside `{baseDir}/scripts` only when dependencies are missing.
-3. Ask the user to install Node.js LTS only when Node.js is unavailable.
+## Resolve Paths And Runtime（Deep-dive / 无 CLI 时）
+
+Determine this SKILL.md directory as {baseDir}. Prefer `media csdn ...` above; use scripts from {baseDir}/scripts only when debugging.
 
 ## Choose The Workflow
 
@@ -51,23 +58,21 @@ One-Time Setup Progress:
 - [ ] Step 4: Run login check once to confirm auth works
 ```
 
-Useful commands:
+Useful commands (fallback):
 
 ```bash
-cd {baseDir}/scripts
-npm install
-npx playwright install chromium
-npx tsx check-login.ts --state <storageState.json>
+media csdn auth check
+media csdn auth export
 ```
 
 After this succeeds once, skip these steps in normal runs unless auth expires or the machine/runtime changes.
 
 ## Auth File Discovery Order
 
-1. CLI --state path
-2. CLI --cookie path
-3. <skillRoot>/.auth/storageState.json
-4. <skillRoot>/.auth/cookies.json
+1. CLI `--state` / `--cookie`
+2. `$WORKSPACE/.media-manager/auth/csdn/storageState.json`
+3. `$WORKSPACE/.media-manager/auth/csdn/cookies.json`
+4. `<skillRoot>/.auth/`（兼容旧路径）
 
 Prefer `storageState.json`. Use `cookies.json` only as fallback.
 
@@ -95,7 +100,7 @@ Draft Workflow Progress:
 Recommended command:
 
 ```bash
-npx tsx {baseDir}/scripts/post-article.ts --file <article.md> --draft --state <storageState.json>
+media csdn post --file output/{slug}/article.md --draft
 ```
 
 Rules:
@@ -121,7 +126,7 @@ Analytics Workflow Progress:
 Recommended command:
 
 ```bash
-npx tsx {baseDir}/scripts/fetch-analytics.ts --page both --state <storageState.json> --output <output-dir>
+media csdn analytics fetch
 ```
 
 Default interpretation of the analytics output:
