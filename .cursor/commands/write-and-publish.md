@@ -2,70 +2,20 @@
 description: 选题、写作、配图并发布到 微信/CSDN/掘金/小红书
 ---
 
-本工作流将串联多个 Skill，实现从选题确认到多平台发布的自动化运营闭合回路。
+执行前先 `media workspace show`。对应 [write-and-publish](../../skills/media-manager/references/workflows/write-and-publish.md)。
 
-## 强制门禁
+## 门禁
 
-以下规则具有最高优先级，必须严格执行：
+选题、提纲、初稿、发布须用户确认。
 
-1. 每次只允许推进一个阶段，不得跨越用户确认直接进入下一阶段。
-2. 选题、提纲、初稿三个节点都必须等待用户明确确认。
-3. 每个阶段只输出当前阶段产物，不得提前生成后续阶段内容。
-4. 如果缺少用户确认，必须停止并说明下一步需要用户确认什么。
+## 步骤
 
-### 第一步：选题确定与文章撰写 (Writing)
+1. **写作**：`article-writer` skill → `$WORKSPACE/output/{slug}/article.md`
+2. **配图**：`article-illustrator` skill → `$WORKSPACE/output/{slug}/images/`
+3. **发布**（优先 subagent 并行）：
+   - 微信：`media wechat post ...`
+   - CSDN：`media csdn post --file ... --draft`
+   - 掘金：`media juejin post --file ... --draft`
+   - 小红书：`media xhs post-note ...`
 
-调用 `./article-writer/SKILL.md` 进行核心创作流程。严格按照`./article-writer/SKILL.md` 中的指引进行写作
-
-1. **选题确认**：如果用户已提供选题则直接开始；若无，则按 `article-writer` Step 1 分支 B 执行——**支持 subagent 时优先委派 subagent** 完成选题指南加载、`news-skill` 素材获取与候选筛选；不支持时由主 agent inline 执行同等流程。
-2. **提纲与写作**：按该 Skill 指引完成提纲审批并生成文章,生成的文章需要请求用户进行审稿。
-3. **输出路径**：文章最终应产出到 `./output/{slug}/article.md`。
-
-硬性要求：在用户明确确认最终选题之前，不得进入提纲阶段；在用户明确确认提纲之前，不得进入正文写作；在用户明确审稿完成之前，不得进入配图或发布。
-
-### 第二步：配图设计与生成 (Illustration)
-
-针对已撰写的文章，调用 `./article-illustrator/SKILL.md` 进行视觉增强。
-
-1. 自动读取 `./output/{slug}/article.md` 中的配图占位符。
-2. 生成封面图（cover）及正文插图（img-01, img-02...）。
-3. 配图产物应统一存放至 `./output/{slug}/images/`。
-
-硬性要求：只有在文章初稿经用户确认后，才能进入配图阶段。
-
-### 第三步：多平台发布 (Multi-platform Publishing)
-
-从 `./output/{slug}/` 中提取最终稿件和图片，发布至目标平台的草稿箱。
-
-#### 执行策略：Subagent 调度优先
-
-若宿主环境**支持调用 subagent**，主 agent 作为**调度者**，优先通过 subagent 完成多平台发布，而不是在主会话中顺序 inline 调用各平台 skill。
-
-**调度流程**：
-
-1. **确认目标平台**：与用户确认本次要发布的平台列表（微信公众号 / CSDN / 掘金 / 小红书，可多选）。
-2. **并行委派**：为每个目标平台各派一个 subagent；各平台发布互不依赖，**应在同一轮中并行发起**（一次消息内多个 Task），以缩短总耗时。
-3. **Subagent 任务范围**（每个平台独立一份 prompt，须包含完整上下文，不得假设 subagent 继承主会话历史）：
-   - 输入：`output/{slug}/` 下对应平台稿件与图片的绝对路径、平台名称（小红书使用已按平台规范生成的 `note.md` 与竖版图片）
-   - 执行：读取并严格遵循对应 skill 的发布流程
-   - 输出：该平台发布结果（成功则返回草稿链接 / `media_id`；失败则返回错误信息与已尝试步骤）
-4. **主 agent 汇总**：收集各 subagent 返回后，统一呈现发布结果；任一平台失败不视为整体完成，须向用户说明并可针对性重试。
-
-**各平台对应 skill**：
-
-| 平台 | Skill 路径 |
-|------|------------|
-| 微信公众号 | `./post-to-wechat/SKILL.md` |
-| CSDN | `./csdn-publish-and-data/SKILL.md` |
-| 掘金 | `./juejin-publish-and-data/SKILL.md` |
-| 小红书 | `./xiaohongshu-publish-and-data/SKILL.md` |
-
-**Fallback — 不支持 subagent 时**：由主 agent 按上表顺序 inline 调用各平台 skill，逐平台执行并汇总结果。
-
-硬性要求：只有在配图完成且用户确认可发布后，才能进入发布步骤。
-
-### 第四步：归档汇总
-
-在任务完成后，记录本次发布的 `media_id` 或链接，并将 `./output/{slug}/` 标记为已完成。
-
-硬性要求：如果某个阶段未获得用户确认，不得进行归档，也不得假设该任务已完成。
+Deep-dive：各 platform skill。

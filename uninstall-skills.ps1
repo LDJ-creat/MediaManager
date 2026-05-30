@@ -14,6 +14,7 @@ param(
 )
 
 $sourceDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$skillsRoot = Join-Path $sourceDir "skills"
 $targetDirs = @(
     "$HOME\\.claude\\skills",
     "$HOME\\.gemini\\skills",
@@ -26,10 +27,17 @@ $targetDirs = @(
 $excludeDirs = @("node_modules", "output", "test-output", "test-output-archive", "test-output-live-v2", ".git", ".auth", "csdn-output")
 $excludeFiles = @(".gitignore", "*.html", "sync-skills.ps1")
 
-# 获取当前工作区中被视为 "技能" 的目录名称（含 guidance）
-$skillDirs = Get-ChildItem -Path $sourceDir -Directory | Where-Object {
-    (Test-Path (Join-Path $_.FullName "SKILL.md")) -or ($_.Name -eq "guidance")
-} | Select-Object -ExpandProperty Name
+# 获取 skills/ 下及 guidance 的技能目录名称
+$skillDirs = @()
+if (Test-Path $skillsRoot) {
+    $skillDirs += Get-ChildItem -Path $skillsRoot -Directory | Where-Object {
+        Test-Path (Join-Path $_.FullName "SKILL.md")
+    } | Select-Object -ExpandProperty Name
+}
+$guidanceDir = Join-Path $sourceDir "guidance"
+if (Test-Path $guidanceDir) {
+    $skillDirs += "guidance"
+}
 
 if (-not $skillDirs) {
     Write-Host "未在源目录中发现任何技能目录，退出。" -ForegroundColor Yellow

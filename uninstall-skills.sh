@@ -37,14 +37,17 @@ TARGET_DIRS=(
 EXCLUDE_DIRS=("node_modules" "output" "test-output" "test-output-archive" "test-output-live-v2" ".git" ".auth" "csdn-output")
 EXCLUDE_FILES=(".gitignore" "*.html" "sync-skills.ps1")
 
-# 收集源目录中被视为技能的目录名（含 guidance）
-mapfile -t dirs < <(find "$SCRIPT_DIR" -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | sort)
+# 收集 skills/ 下及 guidance 的技能目录名
+SKILLS_ROOT="$SCRIPT_DIR/skills"
 skill_dirs=()
-for d in "${dirs[@]}"; do
-  if [ -f "$SCRIPT_DIR/$d/SKILL.md" ] || [ "$d" = "guidance" ]; then
+if [ -d "$SKILLS_ROOT" ]; then
+  while IFS= read -r d; do
     skill_dirs+=("$d")
-  fi
-done
+  done < <(find "$SKILLS_ROOT" -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | sort)
+fi
+if [ -d "$SCRIPT_DIR/guidance" ]; then
+  skill_dirs+=("guidance")
+fi
 
 if [ ${#skill_dirs[@]} -eq 0 ]; then
   echo "未在源目录中发现任何技能目录，退出。"
