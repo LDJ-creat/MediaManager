@@ -36,7 +36,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="抓取 RSS 文章并输出 JSON（供 LLM 分析使用）"
     )
-    parser.add_argument("--hours", type=int, default=None, help="时间窗口（小时），默认读取 sources.md 配置")
+    parser.add_argument("--hours", type=int, default=None, help="时间窗口（小时），默认读取 sources.json 配置")
     parser.add_argument("--preview", action="store_true", help="仅显示条目数摘要，不输出完整 JSON")
     parser.add_argument("--skip-dedup", action="store_true", help="跳过跨天去重")
     args = parser.parse_args()

@@ -23,11 +23,13 @@ git clone https://github.com/LDJ-creat/media-skills.git
 ```
 
 ### 💡 方式 1：通过工作流使用 (推荐)
-项目中预配置了两套自动化工作流（存放在 `.agents/workflows` 和 `.claude/commend`），你可以直接调用：
+项目中预配置了三套自动化工作流（存放在 `.agents/workflows`、`.cursor/commands`、`.claude/commend` 及 `.github/instructions`），你可以直接调用：
 
-1.  **`write-and-publish` (选题->写作->配图->发布)**:
+1.  **`daily-digest` (抓取->筛选->日报->去重)**:
+    *   **作用**：调用 `news-skill` 从 RSS 源抓取近 48 小时技术资讯，由 LLM 筛选评分并生成中文 Markdown 日报，落盘至 `news-skill/data/digests/` 并更新去重记录。
+2.  **`write-and-publish` (选题->写作->配图->发布)**:
     *   **作用**：一键式闭环。从 `news-skill` 获取热点推荐选题(或自行指定选题)，经 `article-writer` 写作，由 `article-illustrator` 自动配图，最后同步发布到微信、CSDN、掘金草稿箱。
-2.  **`analyze-operation` (抓取->分析->反馈)**:
+3.  **`analyze-operation` (抓取->分析->反馈)**:
     *   **作用**：运营闭环。自动抓取各大平台的阅读、粉丝等数据，生成汇总报告，并根据表现优劣自动提炼经验，更新到 `./guidance/` 目录下的写作指南中。
 
 ### 🔄 方式 2：同步到全局技能使用
@@ -67,7 +69,7 @@ git clone https://github.com/LDJ-creat/media-skills.git
 ### 🌐 RSS 资讯源配置
 
 *   **news-skill**:
-    *   你可以按自己的喜好在 `news-skill/references/sources.md` 中增减 RSS 链接。
+    *   你可以按自己的喜好在 `news-skill/references/sources.json` 中增减 RSS 链接。
     *   **🌟 推荐资源**：参考 [Awesome RSSHub Routes](https://github.com/JackyST0/awesome-rsshub-routes) 获取更多优质资讯源。
 
 ---
