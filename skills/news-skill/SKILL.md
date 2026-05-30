@@ -7,6 +7,8 @@ description: 每日科技资讯聚合工具，从多个优质RSS源（Anthropic�
 
 **架构说明**：此 Skill 只负责数据 I/O（抓取文章 + 持久化去重记录）。**你（LLM）是唯一的分析引擎**，负责评分、筛选、分类、翻译和摘要。
 
+**运行环境**：Node.js >= 18。首次使用前在 `scripts/` 目录执行 `npm install`。
+
 ---
 
 ## 工作流
@@ -14,7 +16,7 @@ description: 每日科技资讯聚合工具，从多个优质RSS源（Anthropic�
 ### Step 1：获取文章列表
 
 ```bash
-python scripts/fetch_rss.py
+cd news-skill/scripts && npm run fetch
 ```
 
 - 输出 JSON 到 stdout，同时保存到 `data/latest_articles.json`
@@ -90,7 +92,7 @@ python scripts/fetch_rss.py
 将本次纳入日报的文章 URL 写入 `data/selected_urls.json`，然后运行：
 
 ```bash
-python scripts/mark_seen.py
+cd news-skill/scripts && npm run mark-seen
 ```
 
 这会将 `data/selected_urls.json` 中的 URL 追加到 `data/seen_urls.json`，并自动清理 7 天前的记录。
@@ -100,11 +102,14 @@ python scripts/mark_seen.py
 ## 快速参考
 
 ```bash
+# 首次安装依赖
+cd news-skill/scripts && npm install
+
 # 仅抓取预览（不分析，检查源是否正常）
-python scripts/fetch_rss.py --preview
+cd news-skill/scripts && npm run fetch -- --preview
 
 # 指定时间窗口（小时）
-python scripts/fetch_rss.py --hours 24
+cd news-skill/scripts && npm run fetch -- --hours 24
 ```
 
 ## 配置文件

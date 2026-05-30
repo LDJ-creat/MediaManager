@@ -7,8 +7,8 @@ description: 调用 news-skill 抓取 RSS、筛选评分并生成每日科技资
 ## 执行要求
 
 1. **必须先读取** `./news-skill/SKILL.md`，严格按其中 Step 1–4 执行，不得跳过或简化。
-2. 所有 Python 脚本在 `news-skill` 目录下运行（`cd news-skill` 或使用等价路径）。
-3. **必须跑完全流程**：生成 `data/digests/YYYY-MM-DD.md` 后，还要写入 `data/selected_urls.json` 并执行 `mark_seen.py`；否则跨天去重会失效。
+2. 所有 npm scripts 在 `news-skill/scripts` 目录下运行（`cd news-skill/scripts` 或使用等价路径）；首次使用前执行 `npm install`。
+3. **必须跑完全流程**：生成 `data/digests/YYYY-MM-DD.md` 后，还要写入 `data/selected_urls.json` 并执行 `npm run mark-seen`；否则跨天去重会失效。
 4. 若用户仅要求「预览抓取结果」或「检查 RSS 源是否正常」，可只执行 Step 1 的 `--preview` 模式，并在回复中说明未生成日报、未更新去重记录。
 5. 筛选标准以 `SKILL.md` 为准；需要细节时可参考 `./news-skill/references/prompts.md`。
 
@@ -16,19 +16,19 @@ description: 调用 news-skill 抓取 RSS、筛选评分并生成每日科技资
 
 | 用户意图 | 命令 |
 |---------|------|
-| 默认（48h 窗口） | `python scripts/fetch_rss.py` |
-| 自定义时间窗口 | `python scripts/fetch_rss.py --hours 24` |
-| 仅预览条目数 | `python scripts/fetch_rss.py --preview` |
-| 调试跳过跨天去重 | `python scripts/fetch_rss.py --skip-dedup` |
+| 默认（48h 窗口） | `npm run fetch` |
+| 自定义时间窗口 | `npm run fetch -- --hours 24` |
+| 仅预览条目数 | `npm run fetch -- --preview` |
+| 调试跳过跨天去重 | `npm run fetch -- --skip-dedup` |
 
 ---
 
 ### 第一步：抓取 RSS 文章 (Fetch)
 
-在 `news-skill` 目录执行：
+在 `news-skill/scripts` 目录执行：
 
 ```bash
-python scripts/fetch_rss.py
+npm run fetch
 ```
 
 - 输出 JSON 到 stdout，同时保存到 `data/latest_articles.json`
@@ -68,10 +68,10 @@ python scripts/fetch_rss.py
 2. 执行：
 
 ```bash
-python scripts/mark_seen.py
+npm run mark-seen
 ```
 
-确认 `seen_urls.json` 已更新；可用 `python scripts/mark_seen.py --status` 查看摘要。
+确认 `seen_urls.json` 已更新；可用 `npm run mark-seen:status` 查看摘要。
 
 ---
 
