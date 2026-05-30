@@ -13,9 +13,9 @@ When running from get-wechat-data/scripts, these are common examples:
 
 Each fetch run creates:
 
-- wechat-analytics-YYYYMMDD-HHMMSS.json
+- wechat-analytics-YYYYMMDD-HHMMSS.json (default and sufficient for analyze-operation)
 - wechat-analytics-YYYYMMDD-HHMMSS.md
-- raw-YYYYMMDD-HHMMSS/ when --save-raw is enabled
+- raw-YYYYMMDD-HHMMSS/ only when --save-raw is explicitly enabled
 
 ## JSON structure
 
@@ -25,9 +25,8 @@ Top-level fields:
 - page: content | user | both
 - start, end: optional date filters
 - outputDir: resolved absolute output directory
-- records: deduplicated raw page capture results
+- rawDir: optional path when --save-raw was used
 - normalized: compact business-facing analytics
-- metrics: curated compatibility metrics derived from normalized
 
 ## normalized.content
 
@@ -64,20 +63,9 @@ Top-level fields:
   - netgainUser
   - cumulateUser
 
-## records
+## Raw captures (--save-raw)
 
-records preserve raw captures for inspection and parser maintenance.
-
-Each item includes:
-
-- pageType
-- targetUrl
-- finalUrl
-- resolvedToken when discovered automatically
-- pageTitle
-- bodyPreview
-- responses
-- fallbackState when present
+When --save-raw is enabled, each page type is saved under raw-YYYYMMDD-HHMMSS/ as a separate JSON file (content.json, user.json). These files contain full crawl payloads for debugging and parser maintenance, including network responses and page snapshots. They may contain session tokens — do not commit to git.
 
 ## Markdown report
 
@@ -85,16 +73,14 @@ The Markdown report is a reader-friendly summary of the same run.
 
 Current sections:
 
-- Page Summary
 - Content Summary
 - User Summary
 - Content Daily Trend
 - User Daily Trend
 - Content Articles
-- Curated Metrics
 
 ## Practical guidance
 
 - Use the Markdown file for human review and quick sharing.
 - Use the JSON file for automation or downstream transformation.
-- Use raw-* only for debugging, schema inspection, or parser updates.
+- Use --save-raw only for debugging, schema inspection, or parser updates.

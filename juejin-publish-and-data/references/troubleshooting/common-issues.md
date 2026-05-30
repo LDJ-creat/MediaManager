@@ -26,7 +26,7 @@ Fix:
 
 - rerun with --timeout 60000
 - rerun with --headful for visibility
-- keep --save-raw enabled and inspect raw output
+- add --save-raw and inspect raw output
 
 ## 3. normalized.content.articles is empty
 

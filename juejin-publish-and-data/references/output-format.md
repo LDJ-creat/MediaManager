@@ -9,7 +9,7 @@ If --output is omitted, the script uses default_output_dir from EXTEND.md, or ./
 Each fetch run creates:
 
 - juejin-analytics-YYYYMMDD-HHMMSS.json
-- raw-YYYYMMDD-HHMMSS/ when --save-raw is enabled
+- raw-YYYYMMDD-HHMMSS/ only when --save-raw is explicitly enabled
 
 ## JSON structure
 

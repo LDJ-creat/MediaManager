@@ -64,7 +64,7 @@ default_output_dir: ./csdn-output
 default_categories: 后端, 工具
 default_tags: typescript, playwright
 default_original_flag: true
-default_save_raw: true
+default_save_raw: false
 default_timeout_ms: 30000
 cookie_file_name: cookies.json
 storage_state_file_name: storageState.json
@@ -80,7 +80,7 @@ npx tsx check-login.ts --page both
 ## 6. Recommended first runs
 
 ```bash
-npx tsx fetch-analytics.ts --page both --state ../.auth/storageState.json --save-raw --output ../output
+npx tsx fetch-analytics.ts --page both --state ../.auth/storageState.json --output ../output
 ```
 
 ```bash

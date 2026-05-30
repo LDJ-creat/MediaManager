@@ -121,7 +121,7 @@ Analytics Workflow Progress:
 Recommended command:
 
 ```bash
-npx tsx {baseDir}/scripts/fetch-analytics.ts --page both --state <storageState.json> --save-raw --output <output-dir>
+npx tsx {baseDir}/scripts/fetch-analytics.ts --page both --state <storageState.json> --output <output-dir>
 ```
 
 Default interpretation of the analytics output:

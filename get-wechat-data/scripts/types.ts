@@ -146,7 +146,6 @@ export interface FetchOutput {
   start?: string;
   end?: string;
   outputDir: string;
-  records: CrawlResult[];
-  metrics: MetricPoint[];
+  rawDir?: string;
   normalized: NormalizedAnalytics;
 }

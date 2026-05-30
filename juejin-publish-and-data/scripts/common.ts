@@ -20,7 +20,7 @@ const DEFAULT_CONFIG: SkillConfig = {
   defaultTags: [],
   defaultColumn: undefined,
   defaultVisibility: undefined,
-  defaultSaveRaw: true,
+  defaultSaveRaw: false,
   defaultTimeoutMs: 45_000,
   cookieFileName: "cookies.json",
   storageStateFileName: "storageState.json",
@@ -441,7 +441,7 @@ export function printFetchUsage(scriptName: string): void {
     "  --output <dir>                  Output directory\n" +
     "  --cookie <path>                 Cookie JSON file path\n" +
     "  --state <path>                  Playwright storageState JSON path\n" +
-    "  --save-raw / --no-save-raw      Save raw captured payloads\n" +
+    "  --save-raw / --no-save-raw      Save raw captured payloads (default: off)\n" +
     "  --probe                         Probe login and response capture only\n" +
     "  --headful                       Run browser with GUI\n" +
     "  --timeout <ms>                  Browser timeout in milliseconds\n");
