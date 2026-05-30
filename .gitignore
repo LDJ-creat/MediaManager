@@ -1,4 +1,5 @@
 .env
+.venv/
 node_modules
 
 # get-wechat-data skill sensitive and generated files
@@ -34,3 +35,7 @@ build.mjs
 writing-guide.md
 xhs-images/
 发布命令.md
+
+# Local guidance content — structure tracked via .gitkeep, md bodies stay local
+guidance/topic-selection/**/*.md
+guidance/writing/**/*.md
