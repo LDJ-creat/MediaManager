@@ -109,5 +109,34 @@ python scripts/fetch_rss.py --hours 24
 
 ## 配置文件
 
-- **RSS 源 & 参数**：`references/sources.md`（直接编辑，无需改代码）
+- **RSS 源 & 参数**：`references/sources.json`（直接编辑 JSON，无需改代码）
 - **评分标准参考**：`references/prompts.md`（记录筛选标准的详细说明，供参考）
+
+### sources.json 结构
+
+```json
+{
+  "version": 1,
+  "sources": [
+    {
+      "name": "源名称",
+      "url": "https://example.com/feed.xml",
+      "source_hint": "AI前沿",
+      "weight": 1.0
+    }
+  ],
+  "params": {
+    "TOP_PICKS_COUNT": 3,
+    "MAX_PER_SOURCE": 5,
+    "GLOBAL_MAX": 40,
+    "TIME_WINDOW_HOURS": 48,
+    "DEDUP_RETENTION_DAYS": 7,
+    "BASE_THRESHOLD": 3.0
+  },
+  "categories": [
+    { "id": "AI前沿", "display_name": "AI 前沿", "icon": "🤖" }
+  ]
+}
+```
+
+新增 RSS 源：在 `sources` 数组末尾追加对象；`source_hint` 取值须与 `categories[].id` 一致。

@@ -1,0 +1,86 @@
+{
+  "_comment": "直接编辑此文件即可新增/删除/修改 RSS 源，无需改动代码。source_hint 仅作为 LLM 分类参考，最终分类由文章实际内容决定。",
+  "version": 1,
+  "sources": [
+    {
+      "name": "V2EX",
+      "url": "https://www.v2ex.com/feed/tab/tech.xml",
+      "source_hint": "开发与工程",
+      "weight": 1.0
+    },
+    {
+      "name": "Anthropic",
+      "url": "https://raw.githubusercontent.com/taobojlen/anthropic-rss-feed/main/anthropic_engineering_rss.xml",
+      "source_hint": "AI前沿",
+      "weight": 1.2
+    },
+    {
+      "name": "OpenAI",
+      "url": "https://openai.com/news/engineering/rss.xml",
+      "source_hint": "AI前沿",
+      "weight": 1.2
+    },
+    {
+      "name": "GitHub",
+      "url": "https://github.blog/feed/",
+      "source_hint": "开发与工程",
+      "weight": 1.1
+    },
+    {
+      "name": "Andrew Wang",
+      "url": "https://api.xgo.ing/rss/user/08b5488b20bc437c8bfc317a52e5c26d",
+      "source_hint": "AI前沿",
+      "weight": 1.1
+    },
+    {
+      "name": "Karpathy",
+      "url": "https://api.xgo.ing/rss/user/edf707b5c0b248579085f66d7a3c5524",
+      "source_hint": "AI前沿",
+      "weight": 1.2
+    },
+    {
+      "name": "宝玉",
+      "url": "https://baoyu.io/feed.xml",
+      "source_hint": "AI前沿",
+      "weight": 1.1
+    },
+    {
+      "name": "info",
+      "url": "https://wechat2rss.bestblogs.dev/feed/13da94d7eb314b49fa251cb7e8399cae29d772db.xml",
+      "source_hint": "产品与行业",
+      "weight": 1.0
+    },
+    {
+      "name": "阿里云开发者",
+      "url": "https://wechat2rss.bestblogs.dev/feed/39fc51b0b1316137e608c45da5dbbca4f9eb9538.xml",
+      "source_hint": "大厂动态",
+      "weight": 1.0
+    },
+    {
+      "name": "字节跳动",
+      "url": "https://wechat2rss.bestblogs.dev/feed/d3a9e4d6f125cc98d1691dbc30cd97fec7ae2d03.xml",
+      "source_hint": "大厂动态",
+      "weight": 1.0
+    },
+    {
+      "name": "极客公园",
+      "url": "https://wechat2rss.bestblogs.dev/feed/11ea7163fbea99e2ab9fa2812ac3d179574886cc.xml",
+      "source_hint": "产品与行业",
+      "weight": 1.0
+    }
+  ],
+  "params": {
+    "TOP_PICKS_COUNT": 3,
+    "MAX_PER_SOURCE": 5,
+    "GLOBAL_MAX": 40,
+    "TIME_WINDOW_HOURS": 48,
+    "DEDUP_RETENTION_DAYS": 7,
+    "BASE_THRESHOLD": 3.0
+  },
+  "categories": [
+    { "id": "AI前沿", "display_name": "AI 前沿", "icon": "🤖" },
+    { "id": "开发与工程", "display_name": "开发与工程", "icon": "🛠️" },
+    { "id": "大厂动态", "display_name": "大厂动态", "icon": "🏭" },
+    { "id": "产品与行业", "display_name": "产品与行业", "icon": "📦" }
+  ]
+}

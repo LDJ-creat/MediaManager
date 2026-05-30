@@ -8,17 +8,33 @@ renderer.py — Markdown 日报渲染模块
 import os
 from datetime import date
 
+from fetch_digest_config import load_config
 
-# 板块显示配置：板块ID → (显示名, 图标)
-CATEGORY_DISPLAY = {
-    "AI前沿":    ("AI 前沿",    "🤖"),
-    "开发与工程": ("开发与工程",  "🛠️"),
-    "大厂动态":  ("大厂动态",   "🏭"),
-    "产品与行业": ("产品与行业",  "📦"),
+
+DEFAULT_CATEGORY_DISPLAY = {
+    "AI前沿": ("AI 前沿", "🤖"),
+    "开发与工程": ("开发与工程", "🛠️"),
+    "大厂动态": ("大厂动态", "🏭"),
+    "产品与行业": ("产品与行业", "📦"),
 }
 
-# 板块显示顺序
-CATEGORY_ORDER = ["AI前沿", "开发与工程", "大厂动态", "产品与行业"]
+DEFAULT_CATEGORY_ORDER = ["AI前沿", "开发与工程", "大厂动态", "产品与行业"]
+
+
+def _load_category_display() -> tuple[dict[str, tuple[str, str]], list[str]]:
+    """从 sources.json 加载板块显示配置，缺失时回退到默认值"""
+    try:
+        categories = load_config().get("categories", [])
+        if not categories:
+            return DEFAULT_CATEGORY_DISPLAY.copy(), DEFAULT_CATEGORY_ORDER.copy()
+        display = {
+            category["id"]: (category["display_name"], category["icon"])
+            for category in categories
+        }
+        order = [category["id"] for category in categories]
+        return display, order
+    except (ValueError, KeyError):
+        return DEFAULT_CATEGORY_DISPLAY.copy(), DEFAULT_CATEGORY_ORDER.copy()
 
 
 def _format_article(item: dict, index: int | None = None) -> str:
@@ -60,6 +76,7 @@ def render(
     Returns:
         完整的 Markdown 字符串
     """
+    category_display, category_order = _load_category_display()
     today = report_date or date.today().isoformat()
     total = len(items)
 
@@ -91,23 +108,21 @@ def render(
     lines += ["---", ""]
 
     # ── 各板块 ────────────────────────────────────────────
-    # 按板块分组
-    by_category: dict[str, list[dict]] = {cat: [] for cat in CATEGORY_ORDER}
+    fallback_category = category_order[-1] if category_order else "产品与行业"
+    by_category: dict[str, list[dict]] = {cat: [] for cat in category_order}
     for item in items:
-        cat = item.get("category", "产品与行业")
-        # 容错：未知分类归入最近的有效分类
+        cat = item.get("category", fallback_category)
         if cat not in by_category:
-            cat = "产品与行业"
+            cat = fallback_category
         by_category[cat].append(item)
 
-    for cat_id in CATEGORY_ORDER:
+    for cat_id in category_order:
         cat_items = by_category.get(cat_id, [])
         if not cat_items:
-            continue  # 跳过空板块
-        display_name, icon = CATEGORY_DISPLAY[cat_id]
+            continue
+        display_name, icon = category_display[cat_id]
         lines += [f"## {icon} {display_name}", ""]
 
-        # 板块内按评分降序
         cat_items.sort(key=lambda x: x.get("score", 0), reverse=True)
         for item in cat_items:
             lines.append(_format_article(item))
