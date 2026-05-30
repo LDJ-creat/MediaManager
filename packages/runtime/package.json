@@ -1,0 +1,29 @@
+{
+  "name": "@media-manager/runtime",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "skills", "scripts"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc && node scripts/copy-skills.mjs",
+    "postinstall": "node scripts/install-skill-deps.mjs"
+  },
+  "dependencies": {
+    "@media-manager/core": "0.1.0",
+    "@media-manager/platform-common": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "typescript": "^5.8.0"
+  }
+}
