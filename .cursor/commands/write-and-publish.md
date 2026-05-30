@@ -17,7 +17,7 @@ description: 选题、写作、配图并发布到 微信/CSDN/掘金
 
 调用 `./article-writer/SKILL.md` 进行核心创作流程。严格按照`./article-writer/SKILL.md` 中的指引进行写作
 
-1. **选题确认**：如果用户已提供选题则直接开始；若无，则由该 Skill 自动调用 `news-skill` 生成推荐。
+1. **选题确认**：如果用户已提供选题则直接开始；若无，则按 `article-writer` Step 1 分支 B 执行——**支持 subagent 时优先委派 subagent** 完成选题指南加载、`news-skill` 素材获取与候选筛选；不支持时由主 agent inline 执行同等流程。
 2. **提纲与写作**：按该 Skill 指引完成提纲审批并生成文章,生成的文章需要请求用户进行审稿。
 3. **输出路径**：文章最终应产出到 `./output/{slug}/article.md`。
 
@@ -37,9 +37,29 @@ description: 选题、写作、配图并发布到 微信/CSDN/掘金
 
 从 `./output/{slug}/` 中提取最终稿件和图片，发布至目标平台的草稿箱。
 
-1. **微信公众号**：调用 `./baoyu-post-to-wechat/` 下的发布脚本。
-2. **CSDN**：调用 `./csdn-publish-and-data/` 下的发布脚本。
-3. **掘金**：调用 `./juejin-publish-and-data/` 下的发布脚本。
+#### 执行策略：Subagent 调度优先
+
+若宿主环境**支持调用 subagent**，主 agent 作为**调度者**，优先通过 subagent 完成多平台发布，而不是在主会话中顺序 inline 调用各平台 skill。
+
+**调度流程**：
+
+1. **确认目标平台**：与用户确认本次要发布的平台列表（微信公众号 / CSDN / 掘金，可多选）。
+2. **并行委派**：为每个目标平台各派一个 subagent；各平台发布互不依赖，**应在同一轮中并行发起**（一次消息内多个 Task），以缩短总耗时。
+3. **Subagent 任务范围**（每个平台独立一份 prompt，须包含完整上下文，不得假设 subagent 继承主会话历史）：
+   - 输入：`output/{slug}/article.md` 的绝对路径、`images/` 目录路径、平台名称
+   - 执行：读取并严格遵循对应 skill 的发布流程
+   - 输出：该平台发布结果（成功则返回草稿链接 / `media_id`；失败则返回错误信息与已尝试步骤）
+4. **主 agent 汇总**：收集各 subagent 返回后，统一呈现发布结果；任一平台失败不视为整体完成，须向用户说明并可针对性重试。
+
+**各平台对应 skill**：
+
+| 平台 | Skill 路径 |
+|------|------------|
+| 微信公众号 | `./post-to-wechat/SKILL.md` |
+| CSDN | `./csdn-publish-and-data/SKILL.md` |
+| 掘金 | `./juejin-publish-and-data/SKILL.md` |
+
+**Fallback — 不支持 subagent 时**：由主 agent 按上表顺序 inline 调用各平台 skill，逐平台执行并汇总结果。
 
 硬性要求：只有在配图完成且用户确认可发布后，才能进入发布步骤。
 
