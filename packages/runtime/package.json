@@ -16,7 +16,8 @@
   },
   "scripts": {
     "build": "tsc && node scripts/copy-skills.mjs",
-    "postinstall": "node scripts/install-skill-deps.mjs"
+    "postinstall": "node scripts/install-skill-deps.mjs",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@dsmlll/media-manager-core": "0.1.5",
