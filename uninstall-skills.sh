@@ -26,7 +26,10 @@ done
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 TARGET_DIRS=(
+  "$HOME/.cursor/skills"
+  "$HOME/.agents/skills"
   "$HOME/.claude/skills"
+  "$HOME/.codex/skills"
   "$HOME/.gemini/skills"
   "$HOME/.copilot/skills"
   "$HOME/.gemini/antigravity/skills"
