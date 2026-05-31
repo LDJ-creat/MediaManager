@@ -308,10 +308,16 @@ export function runWorkspaceShow(flags: Record<string, string | boolean>): numbe
   }
 }
 
-export function runWorkspaceSet(flags: Record<string, string | boolean>, positional: string[]): number {
-  const target = typeof flags.workspace === "string" ? flags.workspace : positional[0];
+export function runWorkspaceSet(
+  flags: Record<string, string | boolean>,
+  positional: string[],
+  commandPath?: string
+): number {
+  const target =
+    typeof flags.workspace === "string" ? flags.workspace : positional[0] ?? commandPath;
   if (!target) {
     console.error("Usage: media workspace set <path>");
+    console.error("       media workspace set --workspace <path>");
     return 1;
   }
   setupWorkspace(target);
@@ -628,7 +634,7 @@ export async function dispatch(argv: string[]): Promise<number> {
 
   if (c0 === "setup") return runSetup({ ...flags, interactive: flags.interactive ?? true });
   if (c0 === "workspace" && c1 === "show") return runWorkspaceShow(flags);
-  if (c0 === "workspace" && c1 === "set") return runWorkspaceSet(flags, positional);
+  if (c0 === "workspace" && c1 === "set") return runWorkspaceSet(flags, positional, c2);
   if (c0 === "doctor") return runDoctor();
   if (c0 === "config" && c1 === "show") {
     try {
