@@ -16,11 +16,14 @@ param(
 $sourceDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $skillsRoot = Join-Path $sourceDir "skills"
 $targetDirs = @(
-    "$HOME\\.claude\\skills",
-    "$HOME\\.gemini\\skills",
-    "$HOME\\.copilot\\skills",
-    "$HOME\\.gemini\\antigravity\\skills",
-    "$HOME\\.agent\\skills"
+    "$HOME\.cursor\skills",
+    "$HOME\.agents\skills",
+    "$HOME\.claude\skills",
+    "$HOME\.codex\skills",
+    "$HOME\.gemini\skills",
+    "$HOME\.copilot\skills",
+    "$HOME\.gemini\antigravity\skills",
+    "$HOME\.agent\skills"
 )
 
 # 与 sync-skills.ps1 保持一致的排除项（仅用于列举来源时的过滤）
