@@ -3,6 +3,36 @@ import os from "node:os";
 import path from "node:path";
 import { loadConfig, loadSourcesConfig } from "../scripts/config.js";
 import { fetchAll } from "../scripts/fetcher.js";
+import { resolveSourcesFile, workspaceSourcesFile, SOURCES_FILE } from "../scripts/paths.js";
+
+function testResolveSourcesFile(): void {
+  console.log("\n=== 测试工作区 RSS 源路径 ===");
+  const tmpWs = fs.mkdtempSync(path.join(os.tmpdir(), "news-ws-"));
+  const custom = workspaceSourcesFile(tmpWs);
+  fs.mkdirSync(path.dirname(custom), { recursive: true });
+  fs.copyFileSync(SOURCES_FILE, custom);
+
+  const prev = process.env.MEDIA_WORKSPACE;
+  process.env.MEDIA_WORKSPACE = tmpWs;
+  try {
+    const resolved = resolveSourcesFile([]);
+    if (resolved !== path.resolve(custom)) {
+      throw new Error(`期望工作区 sources.json，实际 ${resolved}`);
+    }
+    console.log(`工作区覆盖: ${resolved}`);
+  } finally {
+    if (prev === undefined) delete process.env.MEDIA_WORKSPACE;
+    else process.env.MEDIA_WORKSPACE = prev;
+    fs.rmSync(tmpWs, { recursive: true, force: true });
+  }
+
+  delete process.env.MEDIA_WORKSPACE;
+  const fallback = resolveSourcesFile([]);
+  if (fallback !== SOURCES_FILE) {
+    throw new Error(`无工作区配置时应回退 bundled，实际 ${fallback}`);
+  }
+  console.log(`默认回退: ${fallback}`);
+}
 
 function testLoadConfig(): void {
   console.log("=== 测试配置加载 ===");
@@ -92,6 +122,7 @@ async function testFetch(): Promise<void> {
 async function main(): Promise<void> {
   testLoadConfig();
   testInvalidConfig();
+  testResolveSourcesFile();
   await testFetch();
   console.log("\n所有验证通过！");
 }

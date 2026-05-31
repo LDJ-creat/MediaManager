@@ -2,7 +2,7 @@ import fs from "node:fs";
 import { loadSourcesConfig } from "./config.js";
 import { filterSeen } from "./dedup.js";
 import { fetchAll } from "./fetcher.js";
-import { ensureDataDir, getDataPaths } from "./paths.js";
+import { ensureDataDir, getDataPaths, resolveSourcesFile } from "./paths.js";
 
 function parseArgs(argv: string[]): {
   hours?: number;
@@ -39,7 +39,10 @@ async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   const args = parseArgs(argv);
   const { DATA_DIR, LATEST_ARTICLES_FILE, SEEN_URLS_FILE } = getDataPaths(argv);
-  const [sources, params] = loadSourcesConfig();
+  const sourcesFile = resolveSourcesFile(argv);
+  const [sources, params] = loadSourcesConfig(sourcesFile);
+
+  console.error(`[INFO] RSS 配置: ${sourcesFile}`);
   const timeWindow = args.hours ?? params.TIME_WINDOW_HOURS ?? 48;
   const maxPerSource = params.MAX_PER_SOURCE ?? 5;
   const globalMax = params.GLOBAL_MAX ?? 40;
