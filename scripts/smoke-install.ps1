@@ -20,6 +20,7 @@ try {
   $globalInstalled = $true
 
   $env:MEDIA_MANAGER_SKIP_SETUP = "1"
+  $env:MEDIA_MANAGER_SKIP_SKILLS = "1"
   $env:MEDIA_WORKSPACE = $tempWorkspace
 
   Write-Host "== smoke: media setup (default workspace path) ==" -ForegroundColor Cyan
@@ -45,5 +46,6 @@ finally {
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
   }
   Remove-Item Env:MEDIA_MANAGER_SKIP_SETUP -ErrorAction SilentlyContinue
+  Remove-Item Env:MEDIA_MANAGER_SKIP_SKILLS -ErrorAction SilentlyContinue
   Remove-Item Env:MEDIA_WORKSPACE -ErrorAction SilentlyContinue
 }
