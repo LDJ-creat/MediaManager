@@ -7,12 +7,16 @@ import {
   WECHAT_API_ENV,
   IMAGE_GEN_ENV,
   buildImageGenSecretValues,
+  getImageGenDefaultModel,
   getImageGenStatus,
   getWechatApiStatus,
   loadEnvFile,
   loadWorkspaceSecrets,
   mergeSecretsIntoEnv,
+  parseExtendDefaultModel,
+  resolveImageGenEffectiveModel,
   resolveSecretsDir,
+  writeImageGenExtendConfig,
   writeImageGenExtendProvider,
   writeSecretsFile,
 } from "../src/secrets.js";
@@ -95,6 +99,34 @@ test("getWechatApiStatus detects configured credentials", () => {
   const status = getWechatApiStatus(ws);
   assert.equal(status.configured, true);
   assert.ok(status.path.endsWith(WECHAT_API_ENV));
+});
+
+test("getImageGenDefaultModel returns built-in default per provider", () => {
+  assert.equal(getImageGenDefaultModel("google"), "gemini-3-pro-image-preview");
+  assert.equal(getImageGenDefaultModel("dashscope"), "qwen-image-2.0-pro");
+  assert.equal(getImageGenDefaultModel("openrouter"), "google/gemini-3.1-flash-image-preview");
+});
+
+test("writeImageGenExtendConfig stores custom default_model for provider", () => {
+  const ws = path.join(tmpRoot, "ws-image-model");
+  const extendPath = writeImageGenExtendConfig(ws, "google", {
+    model: "gemini-3.1-flash-image-preview",
+  });
+  const content = fs.readFileSync(extendPath, "utf8");
+  assert.match(content, /default_provider: google/);
+  assert.match(content, /google: gemini-3.1-flash-image-preview/);
+  assert.equal(parseExtendDefaultModel(content, "google"), "gemini-3.1-flash-image-preview");
+});
+
+test("writeImageGenExtendConfig clears model override when model is null", () => {
+  const ws = path.join(tmpRoot, "ws-image-model-clear");
+  writeImageGenExtendConfig(ws, "google", { model: "custom-model" });
+  const extendPath = writeImageGenExtendConfig(ws, "google", { model: null });
+  const content = fs.readFileSync(extendPath, "utf8");
+  assert.match(content, /google: null/);
+  const resolved = resolveImageGenEffectiveModel("google", content);
+  assert.equal(resolved.configured, null);
+  assert.equal(resolved.effective, "gemini-3-pro-image-preview");
 });
 
 test("getImageGenStatus uses EXTEND default_provider", () => {
