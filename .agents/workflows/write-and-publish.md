@@ -14,9 +14,9 @@
 
 ## 门禁
 
-- **平台**：用户未明确目标平台时，**必须先询问**（选择器或多选 / 自然语言），收到明确选择并完成确认前，**不得**进入 Step 1，**不得**执行 `media * post*`。详见 Step 0 与 Step 5。
+- **平台（最高优先级）**：见 Step 0 与 Step 5。未收到用户对 **[发布平台确认] 块** 的明确「确认发布」前，**禁止**调用任何 `media * post*`。不得因用户催促或成稿已完成而跳过。
 - 选题、提纲、初稿各阶段须用户确认（见 `article-writer` skill）。
-- 发布前须再次核对 Step 0 记录的平台组合；用户变更意图或未确认时，按 [orchestration.md § 平台选择协议](../../skills/media-manager/references/orchestration.md#平台选择协议) 重新询问。
+- 外源素材格式未验证时，**禁止**直接进入 Step 5；见 [orchestration.md § 外源成稿格式准入](../../skills/media-manager/references/orchestration.md#外源成稿格式准入)。
 
 ## 步骤
 
@@ -83,15 +83,21 @@
 
 ### 5. 发布（CLI）
 
-**发布前平台确认**（与 Step 0 一致，不可省略）：
+> ⛔ **硬门禁**：本节第一步不是跑 CLI，而是输出 [orchestration.md § 发布硬门禁](../../skills/media-manager/references/orchestration.md#发布硬门禁step-5--publish-only-step-3-强制执行) 中的 **「发布平台确认」块** 并**等待用户回复「确认发布」**。未完成则 **STOP**。
 
-1. 核对 Step 0 已记录且用户已确认的目标平台
-2. 若用户中途变更意图、或 Step 0 从未完成平台确认 → 按 [orchestration.md § 平台选择协议](../../skills/media-manager/references/orchestration.md#平台选择协议) 重新询问
-3. **收到明确选择前**不得执行 `media * post*`
+**发布前检查清单**（逐项满足，否则不得 `media * post*`）：
+
+- [ ] Step 0 目标平台已记录
+- [ ] 已输出「发布平台确认」固定格式块（含逐条 CLI 命令）
+- [ ] 用户已明确回复「确认发布」或等价肯定
+- [ ] 成稿路径存在且格式准入（longform → `article.md`；xhs → `note.md` + `images:`）
+- [ ] `media doctor` 目标平台 auth / API 无阻塞项（或用户已知并接受风险）
+
+**禁止推断**：不得因「写并发布」「发一下」「各平台都发」而默认全平台；不得省略确认块。
 
 **优先 Subagent** 按平台加载 `guidance/publishing/platform/{platform}.md` 并构造 CLI 参数；多平台**可并行**委派。主编排汇总各平台 CLI 结果与链接。**不要**改写正文；metadata 按 guidance 构造 CLI 参数。
 
-仅发布 Step 0 已确认的平台；勿默认全平台或擅自增删目标。
+仅发布确认块中列出的平台；与用户确认块不一致则 **STOP** 并重新确认。
 
 | 平台 | 命令 | 发布方式 |
 |------|------|----------|

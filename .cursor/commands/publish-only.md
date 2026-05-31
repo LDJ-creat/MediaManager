@@ -17,6 +17,19 @@ Guidance：发布前加载 `guidance/publishing/platform/{platform}.md`（longfo
 - **凭证**：`media doctor` 目标平台 auth 为 ✓
 - **配图**：仅使用已有 `images/` 或 `xhs-images/`；勿在此流程触发出图
 
+## 外源成稿准入（Step 1 之前）
+
+本工作流**不改写正文**，仅发布已规范成稿。若用户提供的素材不符合下列条件，**不得**进入本工作流 Step 3，应改走 [write-and-publish](write-and-publish.md)（article-writer 规范化/润色）：
+
+| 条件 | 要求 |
+|------|------|
+| longform | 工作区 `output/{slug}/article.md`，结构符合 `guidance/writing/longform.md` |
+| 小红书 | `note.md` + frontmatter `images:` 非空且文件存在 |
+| 非 MD / Word / PDF / 粘贴文本 | 须先转为规范 `article.md`（及必要时 `note.md`） |
+| 仅 longform MD 却要发小红书 | 须先提炼 `note.md` + `xhs-images`，禁止直接 post `article.md` |
+
+详见 [orchestration.md § 外源成稿格式准入](../../skills/media-manager/references/orchestration.md#外源成稿格式准入)。
+
 ## 步骤
 
 ### 1. 定位成稿
@@ -45,6 +58,10 @@ Guidance：发布前加载 `guidance/publishing/platform/{platform}.md`（longfo
 | 全部 | 各自对应文件 | 小红书单独确认图片 |
 
 ### 3. 发布（CLI）
+
+> ⛔ **硬门禁**：运行任何 `media * post*` 前，必须输出 [orchestration.md § 发布硬门禁](../../skills/media-manager/references/orchestration.md#发布硬门禁step-5--publish-only-step-3-强制执行) 中的 **「发布平台确认」块**，并**等待用户回复「确认发布」**。未完成则 **STOP**。
+
+**禁止**：因用户说「发布」「各平台」而默认全平台；不得跳过确认块直接调用 CLI。
 
 **优先 Subagent** 按平台加载 guidance、构造 metadata 与 CLI 参数；多平台**可并行**委派。主编排汇总链接与失败摘要。**不要**改写正文。
 

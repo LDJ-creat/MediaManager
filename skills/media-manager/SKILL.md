@@ -16,6 +16,8 @@ description: MediaManager 总控 skill。当用户需要 RSS 选题写作、根�
 5. LLM 门禁流程（选题/提纲/审稿）见各 workflow，不得跳过。
 6. **平台未指明时**：支持选择器则用多选 UI 让用户选平台；否则自然语言询问。详见 [orchestration.md](references/orchestration.md#平台选择协议)。
 7. **Subagent 优先**：无选题走 **news-skill**；配图走 **article-illustrator** / **xhs-images**；发布走各平台 skill——优先委派 Subagent，不支持时 inline 同等流程。详见 [orchestration.md](references/orchestration.md#subagent-编排强制偏好)。
+8. **发布硬门禁（不可跳过）**：运行任何 `media * post*` 前，必须输出 [orchestration.md § 发布硬门禁](references/orchestration.md#发布硬门禁step-5--publish-only-step-3-强制执行) 中的「发布平台确认」块，并等待用户回复「确认发布」。不得因催促、成稿已完成或 Step 0 曾讨论过而省略。
+9. **外源成稿准入**：用户提供的素材若不在 `$WORKSPACE/output/{slug}/` 或不符合 longform/note 规范（含 Word/PDF/非规范 MD），**不得**直接走 publish-only；须先按 [orchestration.md § 外源成稿格式准入](references/orchestration.md#外源成稿格式准入) 规范化后再发布。
 
 ## 核心能力
 
@@ -24,7 +26,8 @@ description: MediaManager 总控 skill。当用户需要 RSS 选题写作、根�
 | 仅资讯日报（抓素材，不写作） | [daily-digest](references/workflows/daily-digest.md) | RSS 抓取与日报；`media news fetch` |
 | 无素材，RSS 驱动写作 | [daily-digest](references/workflows/daily-digest.md) → [write-and-publish](references/workflows/write-and-publish.md) | 先抓素材/选题，再按 write-and-publish 写作发布 |
 | 有素材/初稿，写作润色发布 | [write-and-publish](references/workflows/write-and-publish.md) | 含 LLM 门禁；`media image gen`、平台 post |
-| 已有成稿，仅发布 | [publish-only](references/workflows/publish-only.md) | 不改写正文；按平台 CLI 发布 |
+| 已有成稿，仅发布 | [publish-only](references/workflows/publish-only.md) | 不改写正文；**前提**成稿已规范落盘；按平台 CLI 发布 |
+| 外源成稿（Word/PDF/非规范 MD） | [write-and-publish](references/workflows/write-and-publish.md) | 先规范化/润色落盘，再配图与发布；**禁止**直接 publish-only |
 | 数据复盘与进化 | [analyze-operation](references/workflows/analyze-operation.md) | `media analytics fetch --all` |
 
 > **daily-digest** 只负责抓 RSS、生成日报素材，不含完整写作流程。无素材写作须串联 **write-and-publish**（其中步骤 1 已说明无选题时的 RSS 路径）。
