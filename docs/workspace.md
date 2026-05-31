@@ -24,6 +24,7 @@ Clone 仓库后，**repo 根目录** 即 workspace（存在 `.media-manager/repo
 ├── guidance/
 └── .media-manager/
     ├── config.json
+    ├── news/sources.json      # RSS 源（media news sources edit）
     ├── data/news/
     └── data/analytics/{platform}/
     └── auth/{platform}/

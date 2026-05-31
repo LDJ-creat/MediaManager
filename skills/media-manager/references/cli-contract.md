@@ -10,21 +10,21 @@
 
 | 命令 | 说明 |
 |------|------|
-| `media setup [--interactive]` | 初始化工作区 + 写 `~/.media-manager/config.json` |
+| `media setup [--interactive]` | 初始化工作区 |
 | `media workspace show` | 输出 workspace 与路径 JSON |
 | `media workspace set <path>` | 更改工作区 |
-| `media init [path] [--with-cursor]` | 补全目录；可选写入 `.cursor/commands` |
 | `media doctor` | 环境与健康检查 |
-| `media skill install [--target cursor\|claude\|all]` | 安装 Skills |
-| `media skill update [--target cursor\|claude\|all]` | 更新 Skills |
+| `media skill install [--target cursor\|claude\|codex\|all]` | 安装 Skills（默认 all） |
+| `media skill update [--target cursor\|claude\|codex\|all]` | 更新 Skills（默认 all） |
 | `media skill uninstall` | 卸载 Skills |
 
 ## News
 
 | 命令 | 说明 |
 |------|------|
-| `media news fetch [--hours N] [--preview] [--skip-dedup]` | RSS 抓取 → stdout JSON + `.media-manager/data/news/latest_articles.json` |
+| `media news fetch [--hours N] [--preview] [--skip-dedup]` | RSS 抓取 → stdout JSON + `.media-manager/data/news/latest_articles.json`（RSS 源见 `.media-manager/news/sources.json`） |
 | `media news mark-seen [--date YYYY-MM-DD] [--status]` | 更新去重记录 |
+| `media news sources edit` | 打开工作区 RSS 源配置（首次从默认复制） |
 
 ## 平台
 

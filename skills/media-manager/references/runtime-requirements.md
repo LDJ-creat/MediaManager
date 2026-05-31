@@ -8,10 +8,11 @@
 
 ## Skills
 
-`media setup` 会自动安装 Skills。也可手动：
+`media setup` 会自动安装 Skills（默认 Cursor、Claude Code、Codex）。也可手动：
 
 ```bash
-media skill install
+media skill install              # --target 默认 all
+media skill install --target codex
 media skill update
 ```
 
