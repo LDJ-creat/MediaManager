@@ -18,6 +18,8 @@
 
 按 `article-illustrator` skill；出图可用 `media image gen --prompt "..." --image $WORKSPACE/output/{slug}/images/cover.png`
 
+**降级**：API 未配置或调用失败时，改用 Agent 内置生图工具；若无内置能力，告知用户无法配图（勿伪造路径）。
+
 ### 3. 发布（CLI）
 
 | 平台 | 命令 |

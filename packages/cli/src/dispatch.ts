@@ -12,6 +12,7 @@ import {
   setupWorkspace,
 } from "@dsmlll/media-manager-core";
 import { resolveSkillScript } from "@dsmlll/media-manager-runtime";
+import { formatDoctorLine, printBanner, printStep, ui } from "./ui.js";
 
 export interface ParsedArgs {
   command: string[];
@@ -117,41 +118,95 @@ export function spawnBunScript(
   return spawnInWorkspace(workspace, "npx", ["-y", "bun", scriptPath, ...args], extraEnv);
 }
 
-export async function promptSetupInteractive(): Promise<string> {
-  const defaultPath = getDefaultWorkspacePath();
-  console.log("\nMediaManager 工作区用于存放文章、配图、日报、复盘报告和 guidance。\n");
-  console.log(`默认工作区路径：\n  ${defaultPath}\n`);
-  console.log("直接回车使用默认路径，或输入自定义路径后回车：");
-
-  if (!process.stdin.isTTY) {
-    console.log(`\n非交互环境，使用默认路径: ${defaultPath}`);
-    return defaultPath;
-  }
-
+export async function promptLine(message: string): Promise<string> {
+  if (!process.stdin.isTTY) return "";
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const answer = await new Promise<string>((resolve) => {
-    rl.question("> ", (value) => {
+    rl.question(message, (value) => {
       rl.close();
       resolve(value.trim());
     });
   });
+  return answer;
+}
+
+export async function promptSetupInteractive(): Promise<string> {
+  printBanner();
+  printStep(ui.cyan("▸"), "工作区", "存放文章、配图、日报、复盘报告和 guidance");
+  const defaultPath = getDefaultWorkspacePath();
+  console.log(`\n  ${ui.dim("默认路径")}\n  ${ui.blue(defaultPath)}\n`);
+  console.log(ui.dim("直接回车使用默认路径，或输入自定义路径后回车：\n"));
+
+  if (!process.stdin.isTTY) {
+    console.log(`${ui.dim("非交互环境，使用默认路径:")} ${defaultPath}`);
+    return defaultPath;
+  }
+
+  const answer = await promptLine(`${ui.cyan(">")} `);
   return answer || defaultPath;
 }
 
+const PLATFORM_AUTH_SETUP = [
+  { key: "wechat", label: "微信公众号", skill: "get-wechat-data" },
+  { key: "csdn", label: "CSDN", skill: "csdn-publish-and-data" },
+  { key: "juejin", label: "掘金", skill: "juejin-publish-and-data" },
+  { key: "xhs", label: "小红书", skill: "xiaohongshu-publish-and-data" },
+] as const;
+
+export async function promptPlatformAuthSetup(workspace: string): Promise<void> {
+  if (!process.stdin.isTTY || process.env.MEDIA_MANAGER_SKIP_AUTH_SETUP === "1") return;
+
+  console.log("");
+  printStep(ui.magenta("▸"), "平台登录凭证", "可选；跳过后仍可用 media <platform> auth export 配置");
+  console.log(ui.dim("  每个平台：[Y] 立即配置 / [Enter] 跳过\n"));
+
+  for (const { key, label, skill } of PLATFORM_AUTH_SETUP) {
+    const answer = await promptLine(`  ${ui.bold(label)} — 现在配置？${ui.dim("[y/N]")} `);
+    const yes = answer.toLowerCase() === "y" || answer.toLowerCase() === "yes";
+    if (!yes) {
+      console.log(`  ${ui.dim("跳过")} ${label}`);
+      continue;
+    }
+    console.log(`\n  ${ui.cyan("→")} 正在打开浏览器，请完成 ${label} 登录…\n`);
+    const code = spawnTsxScript(
+      workspace,
+      skill,
+      "scripts/export-storage-state.ts",
+      [],
+      platformAuthEnv(workspace, key)
+    );
+    if (code === 0) {
+      console.log(`  ${ui.green("✓")} ${label} 凭证已保存至 ${platformAuthEnv(workspace, key).MEDIA_AUTH_DIR}\n`);
+    } else {
+      console.log(`  ${ui.yellow("⚠")} ${label} 配置未完成，可稍后运行 ${AUTH_EXPORT_HINT[key]}\n`);
+    }
+  }
+}
+
 export async function runSetup(flags: Record<string, string | boolean>): Promise<number> {
+  const interactive = flags.interactive !== false && flags["skip-auth"] !== true;
   const workspacePath =
     typeof flags.workspace === "string"
       ? flags.workspace
-      : flags.interactive
+      : interactive
         ? await promptSetupInteractive()
         : getDefaultWorkspacePath();
 
   const { paths } = setupWorkspace(workspacePath);
-  console.log(`\n工作区已初始化: ${paths.workspace}`);
-  console.log(`全局配置: ~/.media-manager/config.json`);
-  console.log("\n建议下一步:");
-  console.log("  npx skills add LDJ-creat/MediaManager --skill media-manager -g -y");
-  console.log("  media doctor");
+
+  console.log("");
+  printStep(ui.green("✓"), "工作区已就绪", paths.workspace);
+  console.log(`  ${ui.dim("全局配置")}  ~/.media-manager/config.json`);
+
+  if (interactive && process.stdin.isTTY && flags["skip-auth"] !== true) {
+    await promptPlatformAuthSetup(paths.workspace);
+  }
+
+  console.log("");
+  printStep(ui.cyan("▸"), "建议下一步");
+  console.log(`  ${ui.blue("npx skills add LDJ-creat/MediaManager --skill media-manager -g -y")}`);
+  console.log(`  ${ui.blue("media doctor")}`);
+  console.log("");
   return 0;
 }
 
@@ -229,6 +284,45 @@ const AUTH_EXPORT_HINT: Record<string, string> = {
   xhs: "media xhs auth export",
 };
 
+const PLATFORM_DOCTOR = [
+  { key: "wechat", label: "WeChat", skill: "get-wechat-data" },
+  { key: "csdn", label: "CSDN", skill: "csdn-publish-and-data" },
+  { key: "juejin", label: "Juejin", skill: "juejin-publish-and-data" },
+  { key: "xhs", label: "Xiaohongshu", skill: "xiaohongshu-publish-and-data" },
+] as const;
+
+function checkPlatformAuth(
+  workspace: string,
+  key: string,
+  label: string,
+  skill: string,
+  check: (ok: boolean, msg: string, fatal?: boolean) => void
+): void {
+  const authDir = path.join(workspace, ".media-manager", "auth", key);
+  for (const file of ["storageState.json", "cookies.json"] as const) {
+    const p = path.join(authDir, file);
+    if (fs.existsSync(p)) {
+      check(true, `${label} auth (${p})`);
+      return;
+    }
+  }
+  try {
+    const script = resolveSkillScript(skill, "scripts/export-storage-state.ts");
+    const skillRoot = path.resolve(path.dirname(script), "..");
+    const legacy = path.join(skillRoot, ".auth", "storageState.json");
+    if (fs.existsSync(legacy)) {
+      check(
+        false,
+        `${label} auth (legacy path ${legacy} — re-run ${AUTH_EXPORT_HINT[key]} to save under workspace)`
+      );
+      return;
+    }
+  } catch {
+    /* runtime bundle missing */
+  }
+  check(false, `${label} auth (missing — run ${AUTH_EXPORT_HINT[key]})`);
+}
+
 function spawnTsxScriptAsync(
   workspace: string,
   skillName: string,
@@ -260,9 +354,13 @@ function spawnTsxScriptAsync(
 export function runDoctor(): number {
   let code = 0;
   const check = (ok: boolean, msg: string, fatal = false) => {
-    console.log(`${ok ? "✓" : fatal ? "✗" : "⚠"} ${msg}`);
+    console.log(formatDoctorLine(ok, fatal, msg));
     if (!ok && fatal) code = 1;
   };
+
+  console.log("");
+  printStep(ui.cyan("▸"), "MediaManager 健康检查", "");
+  console.log("");
 
   const nodeOk = process.version.localeCompare("v20", undefined, { numeric: true }) >= 0;
   check(nodeOk, `Node ${process.version}`, !nodeOk);
@@ -315,23 +413,12 @@ export function runDoctor(): number {
   }
 
   if (workspace) {
-    for (const [key, label] of [
-      ["wechat", "WeChat"],
-      ["csdn", "CSDN"],
-      ["juejin", "Juejin"],
-      ["xhs", "Xiaohongshu"],
-    ] as const) {
-      const authDir = path.join(workspace, ".media-manager", "auth", key);
-      const hasAuth =
-        fs.existsSync(path.join(authDir, "storageState.json")) ||
-        fs.existsSync(path.join(authDir, "cookies.json"));
-      check(
-        hasAuth,
-        `${label} auth (${hasAuth ? authDir : `missing — run ${AUTH_EXPORT_HINT[key]}`})`
-      );
+    for (const { key, label, skill } of PLATFORM_DOCTOR) {
+      checkPlatformAuth(workspace, key, label, skill, check);
     }
   }
 
+  console.log("");
   return code;
 }
 
@@ -603,7 +690,7 @@ function printHelp() {
   console.log(`MediaManager CLI (media) v${getCliVersion()}
 
 Setup:
-  media setup [--interactive] [--workspace <path>]
+  media setup [--interactive] [--workspace <path>] [--skip-auth]
   media workspace show|set <path>
   media init [path] [--with-cursor]
   media doctor
