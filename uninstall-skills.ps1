@@ -37,8 +37,8 @@ if (Test-Path $skillsRoot) {
         Test-Path (Join-Path $_.FullName "SKILL.md")
     } | Select-Object -ExpandProperty Name
 }
-$guidanceDir = Join-Path $sourceDir "guidance"
-if (Test-Path $guidanceDir) {
+$guidanceTemplate = Join-Path $sourceDir "skills\media-manager\references\guidance"
+if (Test-Path $guidanceTemplate) {
     $skillDirs += "guidance"
 }
 
