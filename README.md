@@ -12,7 +12,7 @@ media setup
 media doctor
 ```
 
-安装时交互设置工作区（默认 `Documents/MediaManager-Workspace`），并自动安装 Skills。详见 [docs/install.md](docs/install.md)。
+安装时交互设置工作区（默认 `Documents/MediaManager-Workspace`），配置平台登录凭证与 API 密钥，并自动安装 Skills。详见 [docs/install.md](docs/install.md)。
 
 ### Mode A（开发者）
 
@@ -30,7 +30,8 @@ Repo 根目录即工作区（`.media-manager/repo-marker.json`）。
 
 | 命令                            | 说明                                    |
 | ----------------------------- | ------------------------------------- |
-| `media setup`                 | 初始化工作区与全局配置（二次运行展示当前状态摘要）             |
+| `media setup`                 | 初始化工作区、登录凭证、API 密钥与 Skills（二次运行展示摘要） |
+| `media config show`           | 查看凭证/API 配置状态（不输出密钥明文）              |
 | `media workspace show`        | 显示当前工作区路径                             |
 | `media doctor`                | 环境自检                                  |
 | `media news fetch`            | 抓取 RSS 资讯                             |

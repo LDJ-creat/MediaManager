@@ -11,7 +11,7 @@
   "scripts": {
     "build": "npm run build -w @dsmlll/media-manager-core && npm run build -w @dsmlll/media-manager-platform-common && npm run build -w @dsmlll/media-manager-runtime && node scripts/sync-workflows.mjs && npm run build -w @dsmlll/media-manager-cli",
     "sync:workflows": "node scripts/sync-workflows.mjs",
-    "test": "npm run test -w @dsmlll/media-manager-core && npm run test -w @dsmlll/media-manager-cli",
+    "test": "npm run test -w @dsmlll/media-manager-core && npm run test -w @dsmlll/media-manager-platform-common && npm run test -w @dsmlll/media-manager-cli",
     "media": "node packages/cli/dist/main.js"
   },
   "engines": {

@@ -10,9 +10,10 @@ description: MediaManager 总控 skill。当用户需要 RSS 选题写作、根�
 ## 强制规则
 
 1. 执行任何操作前先运行 `media workspace show`；若失败则引导用户 `media setup --interactive`。
-2. 优先使用 `media ...` CLI，不要假设能读取 monorepo 源码。
-3. 所有产物写入 **工作区**（`output/`、`guidance/`、`.media-manager/data/`），不要写到 Agent 临时目录。
-4. LLM 门禁流程（选题/提纲/审稿）见各 workflow，不得跳过。
+2. 发布/配图前建议 `media config show` 或 `media doctor`，确认 API 密钥已配置。
+3. 优先使用 `media ...` CLI，不要假设能读取 monorepo 源码。
+4. 所有产物写入 **工作区**（`output/`、`guidance/`、`.media-manager/data/`），不要写到 Agent 临时目录。
+5. LLM 门禁流程（选题/提纲/审稿）见各 workflow，不得跳过。
 
 ## 核心能力
 

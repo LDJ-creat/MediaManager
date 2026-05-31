@@ -29,7 +29,9 @@ media wechat post $WORKSPACE/output/{slug}/article.md [options]
 
 ## 凭证
 
-- `WECHAT_APP_ID` / `WECHAT_APP_SECRET` 或 skill 目录 `.env`
+- **API 发布**：`media setup` 或 `media wechat config api` → `.media-manager/secrets/wechat-api.env`
+- **运营数据**：浏览器登录 → `.media-manager/auth/wechat/`（与 API 密钥不同）
+- 详见 [docs/wechat-api-setup.md](../../../../docs/wechat-api-setup.md) 与 [微信公众平台开发者指南](https://developers.weixin.qq.com/doc/subscription/guide/dev/api/)
 
 ## 行为
 

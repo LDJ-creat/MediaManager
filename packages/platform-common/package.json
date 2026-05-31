@@ -1,6 +1,6 @@
 {
   "name": "@dsmlll/media-manager-platform-common",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -15,10 +15,12 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "node --import tsx --test tests/*.test.ts"
   },
   "devDependencies": {
     "@types/node": "^24.6.0",
+    "tsx": "^4.20.6",
     "typescript": "^5.8.0"
   }
 }

@@ -197,7 +197,9 @@ Paths in `promptFiles`, `image`, and `ref` are resolved relative to the batch fi
 | `BAOYU_IMAGE_GEN_<PROVIDER>_CONCURRENCY`       | Override provider concurrency, e.g. `BAOYU_IMAGE_GEN_REPLICATE_CONCURRENCY`     |
 | `BAOYU_IMAGE_GEN_<PROVIDER>_START_INTERVAL_MS` | Override provider start gap, e.g. `BAOYU_IMAGE_GEN_REPLICATE_START_INTERVAL_MS` |
 
-**Load Priority**: CLI args > EXTEND.md > env vars > `baoyu-image-gen/.env` > `<cwd>/.config/baoyu-image-gen/.env` > `~/.config/baoyu-image-gen/.env`
+**Load Priority**: CLI args > EXTEND.md > env vars > `{workspace}/.media-manager/secrets/image-gen.env` > `baoyu-image-gen/.env` > `<cwd>/.config/baoyu-image-gen/.env` > `~/.config/baoyu-image-gen/.env`
+
+推荐通过 `media setup` 或 `media image-gen config` 配置 API Key（写入 workspace secrets）与默认 Provider（写入 `<cwd>/.config/baoyu-image-gen/EXTEND.md`）。
 
 ## Model Resolution
 
