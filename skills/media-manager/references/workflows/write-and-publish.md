@@ -65,15 +65,15 @@
 
 发布前加载 `guidance/publishing/platform/{platform}.md`（longform 平台）。
 
-| 平台 | 命令 |
-|------|------|
-| 微信 | `media wechat post ...` |
-| CSDN | `media csdn post --file $WORKSPACE/output/{slug}/article.md --draft` |
-| 掘金 | `media juejin post --file $WORKSPACE/output/{slug}/article.md --draft` |
-| 小红书 | `media xhs post-note --file $WORKSPACE/output/{slug}/note.md --cdp-url ...` |
+| 平台 | 命令 | 发布方式 |
+|------|------|----------|
+| 微信 | `media wechat post ...` | 草稿箱（返回 media_id 与编辑链接） |
+| CSDN | `media csdn post --file $WORKSPACE/output/{slug}/article.md --draft` | 草稿（返回编辑链接） |
+| 掘金 | `media juejin post --file $WORKSPACE/output/{slug}/article.md --draft` | 草稿（返回编辑链接） |
+| 小红书 | `media xhs post-note --file $WORKSPACE/output/{slug}/note.md --cdp-url ...` | **正式发布**（非草稿） |
 
-**禁止**将 `article.md` 直接用于 `media xhs post-note`。
+**禁止**将 `article.md` 直接用于 `media xhs post-note`。小红书草稿为本地浏览器保存，无法跨设备共享，故采用直接发布。
 
 ### 6. 归档
 
-记录各平台草稿链接 / media_id。
+记录各平台返回链接：微信 media_id 与草稿编辑链接；CSDN / 掘金草稿编辑链接；小红书已发布笔记链接。

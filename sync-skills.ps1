@@ -8,7 +8,6 @@ $targetDirs = @(
     "$HOME\.gemini\skills",
     "$HOME\.copilot\skills",
     "$HOME\.gemini\antigravity\skills",
-    "$HOME\.agent\skills"
 )
 
 $excludeDirs = @("node_modules", "output", "test-output", "test-output-archive", "test-output-live-v2", ".git", ".auth", "csdn-output", "xhs-output")

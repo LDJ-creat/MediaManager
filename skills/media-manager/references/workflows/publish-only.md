@@ -25,10 +25,10 @@ Guidance：发布前加载 `guidance/publishing/platform/{platform}.md`（longfo
 
 | 选项 | 成稿 | 说明 |
 |------|------|------|
-| 微信公众号 | article.md | 草稿箱 |
-| CSDN | article.md | 草稿 |
-| 掘金 | article.md | 草稿 |
-| 小红书 | note.md | 图文笔记 |
+| 微信公众号 | article.md | 草稿箱（返回 media_id 与编辑链接） |
+| CSDN | article.md | 草稿（返回编辑链接） |
+| 掘金 | article.md | 草稿（返回编辑链接） |
+| 小红书 | note.md | **正式发布**（非草稿；草稿为本地保存，无法跨设备共享） |
 | 全部 | 各自对应文件 | 小红书单独确认图片 |
 
 ### 3. 发布（CLI）
@@ -37,18 +37,18 @@ Guidance：发布前加载 `guidance/publishing/platform/{platform}.md`（longfo
 
 **不要**改写正文；metadata 按 guidance 构造 CLI 参数。
 
-| 平台 | 命令 |
-|------|------|
-| 微信 | `media wechat post ...` |
-| CSDN | `media csdn post --file $WORKSPACE/output/{slug}/article.md --draft` |
-| 掘金 | `media juejin post --file $WORKSPACE/output/{slug}/article.md --draft` |
-| 小红书 | `media xhs post-note --file $WORKSPACE/output/{slug}/note.md --cdp-url ...` |
+| 平台 | 命令 | 发布方式 |
+|------|------|----------|
+| 微信 | `media wechat post ...` | 草稿箱（返回 media_id 与编辑链接） |
+| CSDN | `media csdn post --file $WORKSPACE/output/{slug}/article.md --draft` | 草稿（返回编辑链接） |
+| 掘金 | `media juejin post --file $WORKSPACE/output/{slug}/article.md --draft` | 草稿（返回编辑链接） |
+| 小红书 | `media xhs post-note --file $WORKSPACE/output/{slug}/note.md --cdp-url ...` | **正式发布**（非草稿） |
 
-**禁止**将 `article.md` 直接用于 `media xhs post-note`。
+**禁止**将 `article.md` 直接用于 `media xhs post-note`。小红书草稿为本地浏览器保存，无法跨设备共享，故采用直接发布。
 
 ### 4. 归档
 
-记录发布时间、草稿链接 / media_id、失败摘要。
+记录发布时间、各平台返回链接（微信 media_id / CSDN·掘金草稿编辑链接 / 小红书已发布笔记链接）、失败摘要。
 
 ## 参考
 

@@ -9,6 +9,10 @@ description: Generates Xiaohongshu infographic series for MediaManager. Breaks n
 
 为小红书笔记生成信息图轮播。输入 `note.md`（或从 `article.md` 提炼），输出到 `output/{slug}/xhs-images/`，并回写 `note.md` frontmatter `images:`。
 
+## 上游
+
+基于 [JimLiu/baoyu-skills · baoyu-xhs-images](https://github.com/JimLiu/baoyu-skills/tree/main/skills/baoyu-xhs-images) 改造。详见 [ATTRIBUTION.md](ATTRIBUTION.md)。
+
 ## CLI 协作
 
 ```bash

@@ -2,28 +2,40 @@
 description: 调用 media news 抓取 RSS、筛选评分并生成每日科技资讯 Markdown 日报
 ---
 
-执行前先 `media workspace show`。本工作流对应 `media-manager` skill 的 [daily-digest](../../skills/media-manager/references/workflows/daily-digest.md)。
+# Daily Digest 工作流
 
-## 执行要求
+生成「每日科技资讯」日报与 RSS 素材。**不含**完整写作与发布；写作见 [write-and-publish](write-and-publish.md)，仅发布见 [publish-only](publish-only.md)。
 
-1. 优先 `media news fetch`（非直接 npm scripts）
-2. 数据目录：`$WORKSPACE/.media-manager/data/news/`
-3. 完整流程须 `media news mark-seen`
-4. Deep-dive 见 `news-skill` skill
+执行前先 `media workspace show`。
 
-## 命令
+## 步骤
 
-| 意图 | 命令 |
-|------|------|
-| 默认抓取 | `media news fetch` |
-| 预览 | `media news fetch --preview` |
-| 去重状态 | `media news mark-seen --status` |
-| 记录去重 | `media news mark-seen` |
+### 1. 抓取 RSS
 
-## 产物
+```bash
+media news fetch
+```
 
-| 产物 | 路径 |
-|------|------|
-| 抓取结果 | `.media-manager/data/news/latest_articles.json` |
-| 日报 | `.media-manager/data/news/digests/YYYY-MM-DD.md` |
-| 去重 | `.media-manager/data/news/seen_urls.json` |
+预览：`media news fetch --preview`
+
+自定义 RSS 源：`media news sources edit`（配置位于 `$WORKSPACE/.media-manager/news/sources.json`）
+
+数据目录：`$WORKSPACE/.media-manager/data/news/`
+
+### 2. LLM 分析
+
+读取 `latest_articles.json`，按 `news-skill` skill 规则评分、分类、写中文摘要。
+
+### 3. 写入日报
+
+写入 `$WORKSPACE/.media-manager/data/news/digests/YYYY-MM-DD.md`
+
+### 4. 去重
+
+1. 将选中 URL 写入 `$WORKSPACE/.media-manager/data/news/selected_urls.json`
+2. `media news mark-seen`
+
+## 参考
+
+- Deep-dive：`news-skill` skill
+- 筛选细则：`../../skills/news-skill/references/prompts.md`

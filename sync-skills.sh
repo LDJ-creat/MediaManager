@@ -11,7 +11,6 @@ TARGET_DIRS=(
     "$HOME/.gemini/skills"
     "$HOME/.copilot/skills"
     "$HOME/.gemini/antigravity/skills"
-    "$HOME/.agent/skills"
 )
 
 EXCLUDES=(

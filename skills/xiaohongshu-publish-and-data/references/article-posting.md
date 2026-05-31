@@ -27,6 +27,7 @@ CLI values override frontmatter values.
 
 - Xiaohongshu-ready content only; no long-form article conversion.
 - Publishes immediately; does not click `暂存离开`.
+- **Why not draft?** Xiaohongshu creator drafts are saved locally in the browser and cannot be shared across devices or browsers; MediaManager therefore uses direct publish.
 - Empty note body falls back to title.
 - `--draft` is ignored with a warning.
 

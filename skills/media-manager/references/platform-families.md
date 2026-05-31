@@ -4,10 +4,12 @@ MediaManager 按**内容形态**而非单个发布渠道组织写作与配图。
 
 ## 内容族映射
 
-| 内容族 ID | 平台 | 产出物 | 写作 skill | 配图 skill | 发布 CLI |
-|-----------|------|--------|------------|------------|----------|
-| `longform` | wechat, csdn, juejin | `article.md` + `images/` | article-writer | article-illustrator | `media wechat post` / `media csdn post` / `media juejin post` |
-| `xhs` | xiaohongshu | `note.md` + `xhs-images/` | article-writer（xhs 模式） | xhs-images | `media xhs post-note` |
+| 内容族 ID | 平台 | 产出物 | 写作 skill | 配图 skill | 发布 CLI | 发布方式 |
+|-----------|------|--------|------------|------------|----------|----------|
+| `longform` | wechat, csdn, juejin | `article.md` + `images/` | article-writer | article-illustrator | `media wechat post` / `media csdn post` / `media juejin post` | **草稿箱**（返回编辑链接 / media_id） |
+| `xhs` | xiaohongshu | `note.md` + `xhs-images/` | article-writer（xhs 模式） | xhs-images | `media xhs post-note` | **正式发布**（非草稿） |
+
+小红书不使用草稿：创作中心草稿为本地浏览器保存，无法跨设备 / 浏览器共享。
 
 ## 产出目录
 
@@ -48,7 +50,7 @@ output/{slug}/
 | wechat | `guidance/publishing/platform/wechat.md` |
 | csdn | `guidance/publishing/platform/csdn.md` |
 | juejin | `guidance/publishing/platform/juejin.md` |
-| xiaohongshu | 见 `xiaohongshu-publish-and-data` skill；确认 `note.md` + `xhs-images/` |
+| xiaohongshu | 见 `xiaohongshu-publish-and-data` skill；确认 `note.md` + `xhs-images/`。**正式发布**（非草稿；草稿为本地保存） |
 
 ### 复盘（analyze-operation）
 

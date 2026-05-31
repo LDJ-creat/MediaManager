@@ -30,3 +30,4 @@ media juejin post --file $WORKSPACE/output/{slug}/article.md --draft
 ## 行为
 
 - 仅保存草稿；`--publish` 会被忽略
+- CLI 返回草稿编辑链接

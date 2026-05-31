@@ -30,3 +30,8 @@ media wechat post $WORKSPACE/output/{slug}/article.md [options]
 ## 凭证
 
 - `WECHAT_APP_ID` / `WECHAT_APP_SECRET` 或 skill 目录 `.env`
+
+## 行为
+
+- 保存至公众号草稿箱，不自动群发
+- CLI 返回 media_id 与后台编辑链接，供人工审阅后正式发布
