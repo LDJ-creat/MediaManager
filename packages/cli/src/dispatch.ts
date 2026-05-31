@@ -1,8 +1,16 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import readline from "node:readline";
 import { fileURLToPath } from "node:url";
+import {
+  IMAGE_GEN_ENV,
+  loadWorkspaceSecrets,
+  mergeSecretsIntoEnv,
+  resolveSecretsDir,
+  WECHAT_API_ENV,
+  getImageGenStatus,
+  getWechatApiStatus,
+} from "@dsmlll/media-manager-platform-common";
 import {
   ensureWorkspaceLayout,
   getDefaultWorkspacePath,
@@ -10,7 +18,6 @@ import {
   resolveWorkspace,
   setupWorkspace,
 } from "@dsmlll/media-manager-core";
-import { resolveSkillScript } from "@dsmlll/media-manager-runtime";
 import {
   isMediaManagerSkillInstalled,
   printSkillsInstallFailureHint,
@@ -18,7 +25,11 @@ import {
   runSkillsUninstall,
   runSkillsUpdate,
 } from "./skills.js";
+import { resolveSkillScript } from "@dsmlll/media-manager-runtime";
+import { printConfigShow } from "./config-commands.js";
+import { promptLine } from "./prompt.js";
 import { getConfiguredWorkspace, getPlatformAuthStatuses, printSetupStatusSummary } from "./setup-status.js";
+import { promptApiSecretsSetup, promptImageGenSetup, promptWechatApiSetup } from "./setup-secrets.js";
 import { runNewsSourcesEdit } from "./news-sources.js";
 import { spawnCommand, spawnCommandSync } from "./spawn.js";
 import { formatDoctorLine, printBanner, printStep, ui } from "./ui.js";
@@ -72,17 +83,32 @@ export function getWorkspace(flags: Record<string, string | boolean>): string {
   return resolveWorkspace({ explicit });
 }
 
+export function buildWorkspaceSpawnEnv(
+  workspace: string,
+  extraEnv: Record<string, string> = {},
+  secretFiles: string[] = []
+): Record<string, string> {
+  const env: Record<string, string> = {
+    ...process.env,
+    MEDIA_WORKSPACE: workspace,
+    MEDIA_SECRETS_DIR: resolveSecretsDir(workspace),
+    ...extraEnv,
+  };
+  if (secretFiles.length > 0) {
+    const secrets = loadWorkspaceSecrets(workspace, secretFiles);
+    mergeSecretsIntoEnv(secrets, env);
+  }
+  return env;
+}
+
 export function spawnInWorkspace(
   workspace: string,
   command: string,
   args: string[],
-  extraEnv: Record<string, string> = {}
+  extraEnv: Record<string, string> = {},
+  secretFiles: string[] = []
 ): number {
-  const env = {
-    ...process.env,
-    MEDIA_WORKSPACE: workspace,
-    ...extraEnv,
-  };
+  const env = buildWorkspaceSpawnEnv(workspace, extraEnv, secretFiles);
   const result = spawnCommandSync(command, args, {
     cwd: workspace,
     env,
@@ -96,14 +122,15 @@ export function spawnTsxScript(
   skillName: string,
   scriptRelative: string,
   args: string[] = [],
-  extraEnv: Record<string, string> = {}
+  extraEnv: Record<string, string> = {},
+  secretFiles: string[] = []
 ): number {
   const scriptPath = resolveSkillScript(skillName, scriptRelative);
   if (!fs.existsSync(scriptPath)) {
     console.error(`Script not found: ${scriptPath}`);
     return 1;
   }
-  return spawnInWorkspace(workspace, "npx", ["tsx", scriptPath, ...args], extraEnv);
+  return spawnInWorkspace(workspace, "npx", ["tsx", scriptPath, ...args], extraEnv, secretFiles);
 }
 
 export function spawnBunScript(
@@ -111,7 +138,8 @@ export function spawnBunScript(
   skillName: string,
   scriptRelative: string,
   args: string[] = [],
-  extraEnv: Record<string, string> = {}
+  extraEnv: Record<string, string> = {},
+  secretFiles: string[] = []
 ): number {
   const scriptPath = resolveSkillScript(skillName, scriptRelative);
   if (!fs.existsSync(scriptPath)) {
@@ -121,21 +149,9 @@ export function spawnBunScript(
   const bun = process.platform === "win32" ? "bun.exe" : "bun";
   const hasBun = spawnSync(bun, ["--version"], { stdio: "ignore" }).status === 0;
   if (hasBun) {
-    return spawnInWorkspace(workspace, bun, [scriptPath, ...args], extraEnv);
+    return spawnInWorkspace(workspace, bun, [scriptPath, ...args], extraEnv, secretFiles);
   }
-  return spawnInWorkspace(workspace, "npx", ["-y", "bun", scriptPath, ...args], extraEnv);
-}
-
-export async function promptLine(message: string): Promise<string> {
-  if (!process.stdin.isTTY) return "";
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  const answer = await new Promise<string>((resolve) => {
-    rl.question(message, (value) => {
-      rl.close();
-      resolve(value.trim());
-    });
-  });
-  return answer;
+  return spawnInWorkspace(workspace, "npx", ["-y", "bun", scriptPath, ...args], extraEnv, secretFiles);
 }
 
 export async function promptSetupInteractive(): Promise<string> {
@@ -245,6 +261,10 @@ export async function runSetup(flags: Record<string, string | boolean>): Promise
 
   if (interactive && process.stdin.isTTY && flags["skip-auth"] !== true) {
     await promptPlatformAuthSetup(paths.workspace);
+  }
+
+  if (flags["skip-secrets"] !== true) {
+    await promptApiSecretsSetup(paths.workspace, flags);
   }
 
   const installSkills = await shouldInstallSkills(flags);
@@ -364,11 +384,7 @@ function spawnTsxScriptAsync(
     console.error(`Script not found: ${scriptPath}`);
     return Promise.resolve(1);
   }
-  const env = {
-    ...process.env,
-    MEDIA_WORKSPACE: workspace,
-    ...extraEnv,
-  };
+  const env = buildWorkspaceSpawnEnv(workspace, extraEnv, []);
   return new Promise((resolve) => {
     const child = spawnCommand("npx", ["tsx", scriptPath, ...args], {
       cwd: workspace,
@@ -439,6 +455,18 @@ export function runDoctor(): number {
     for (const { key, label, skill } of PLATFORM_DOCTOR) {
       checkPlatformAuth(workspace, key, label, skill, check);
     }
+
+    const wechatApi = getWechatApiStatus(workspace);
+    check(
+      wechatApi.configured,
+      `WeChat API credentials (${wechatApi.path}${wechatApi.configured ? "" : " — run media setup or media wechat config api"})`
+    );
+
+    const imageGen = getImageGenStatus(workspace);
+    check(
+      imageGen.configured,
+      `Image gen API key (${imageGen.envPath}${imageGen.configured ? "" : ` — missing ${imageGen.missingKeys.join(", ") || "keys"}; run media setup or media image-gen config`})`
+    );
   }
 
   console.log("");
@@ -588,6 +616,16 @@ export async function dispatch(argv: string[]): Promise<number> {
   if (c0 === "workspace" && c1 === "show") return runWorkspaceShow(flags);
   if (c0 === "workspace" && c1 === "set") return runWorkspaceSet(flags, positional);
   if (c0 === "doctor") return runDoctor();
+  if (c0 === "config" && c1 === "show") {
+    try {
+      const ws = getWorkspace(flags);
+      printConfigShow(ws, flags.json === true);
+      return 0;
+    } catch (err) {
+      console.error(String(err));
+      return 1;
+    }
+  }
   if (c0 === "skill" && c1 === "install") return runSkillInstall(flags);
   if (c0 === "skill" && c1 === "update") return runSkillUpdate(flags);
   if (c0 === "skill" && c1 === "uninstall") return runSkillUninstall(flags);
@@ -611,11 +649,33 @@ export async function dispatch(argv: string[]): Promise<number> {
   if (c0 === "news" && c1 === "mark-seen") return runNewsMarkSeen(workspace, flags);
   if (c0 === "news" && c1 === "sources" && c2 === "edit") return runNewsSourcesEdit(workspace);
 
+  if (c0 === "wechat" && c1 === "config" && c2 === "api") {
+    if (!process.stdin.isTTY) {
+      console.error("Usage: media wechat config api (requires interactive terminal)");
+      return 1;
+    }
+    await promptWechatApiSetup(workspace);
+    return 0;
+  }
   if (c0 === "wechat" && c1 === "post") {
-    return spawnBunScript(workspace, "post-to-wechat", "scripts/wechat-api.ts", positional);
+    return spawnBunScript(
+      workspace,
+      "post-to-wechat",
+      "scripts/wechat-api.ts",
+      positional,
+      {},
+      [WECHAT_API_ENV]
+    );
   }
   if (c0 === "wechat" && c1 === "check-env") {
-    return spawnBunScript(workspace, "post-to-wechat", "scripts/check-permissions.ts", positional);
+    return spawnBunScript(
+      workspace,
+      "post-to-wechat",
+      "scripts/check-permissions.ts",
+      positional,
+      {},
+      [WECHAT_API_ENV]
+    );
   }
   if (c0 === "wechat" && c1 === "analytics" && c2 === "fetch") {
     return runAnalyticsFetch(workspace, "get-wechat-data", "wechat", flags);
@@ -666,11 +726,27 @@ export async function dispatch(argv: string[]): Promise<number> {
     return spawnTsxScript(workspace, "xiaohongshu-publish-and-data", "scripts/check-login.ts", positional, platformAuthEnv(workspace, "xhs"));
   }
 
+  if (c0 === "image-gen" && c1 === "config") {
+    if (!process.stdin.isTTY) {
+      console.error("Usage: media image-gen config (requires interactive terminal)");
+      return 1;
+    }
+    await promptImageGenSetup(workspace);
+    return 0;
+  }
+
   if (c0 === "image" && c1 === "gen") {
     const args = [...positional];
     if (typeof flags.prompt === "string") args.push("--prompt", flags.prompt);
     if (typeof flags.image === "string") args.push("--image", flags.image);
-    return spawnBunScript(workspace, "baoyu-image-gen", "scripts/main.ts", args);
+    return spawnBunScript(
+      workspace,
+      "baoyu-image-gen",
+      "scripts/main.ts",
+      args,
+      {},
+      [IMAGE_GEN_ENV]
+    );
   }
 
   if (c0 === "analytics" && c1 === "fetch" && (c2 === "all" || flags.all)) {
@@ -695,9 +771,10 @@ function printHelp() {
   console.log(`MediaManager CLI (media) v${getCliVersion()}
 
 Setup:
-  media setup [--interactive] [--workspace <path>] [--skip-auth] [--skip-skills] [--force-skills]
+  media setup [--interactive] [--workspace <path>] [--skip-auth] [--skip-secrets] [--skip-skills] [--force-skills]
   media workspace show|set <path>
   media doctor
+  media config show [--json]
   media skill install [--target cursor|claude|codex|all]  (default: all)
   media skill update [--target cursor|claude|codex|all]  (default: all)
   media skill uninstall
@@ -710,6 +787,7 @@ News:
 Platforms:
   media wechat post ...
   media wechat check-env
+  media wechat config api
   media wechat analytics fetch
   media wechat auth export|check
   media csdn post --file <path> [--draft]
@@ -722,6 +800,7 @@ Platforms:
   media xhs analytics fetch
   media xhs auth export|check
   media image gen --prompt "..." --image out.png
+  media image-gen config
   media analytics fetch --all [--platform wechat,csdn,juejin,xhs] [--date YYYY-MM-DD]
 
 Global flags:

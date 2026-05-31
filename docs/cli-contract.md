@@ -4,4 +4,4 @@
 
 Skill 与工作流同步策略见 [sync.md](sync.md)。
 
-快速参考：`media setup` | `media workspace show` | `media doctor` | `media news fetch` | `media analytics fetch --all`
+快速参考：`media setup` | `media config show` | `media workspace show` | `media doctor` | `media news fetch` | `media analytics fetch --all`

@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { getImageGenStatus, getWechatApiStatus } from "@dsmlll/media-manager-platform-common";
 import { readGlobalConfig } from "@dsmlll/media-manager-core";
 import { isMediaManagerSkillInstalled } from "./skills.js";
 import { printStep, ui } from "./ui.js";
@@ -58,6 +59,14 @@ export function printSetupStatusSummary(): {
       .map((s) => `${s.label} ${s.configured ? ui.green("✓") : ui.dim("—")}`)
       .join("  ");
     console.log(`  ${ui.dim("凭证")}    ${authLine}`);
+
+    const wechatApi = getWechatApiStatus(workspace);
+    const imageGen = getImageGenStatus(workspace);
+    const apiLine = [
+      `微信发布 ${wechatApi.configured ? ui.green("✓") : ui.dim("—")}`,
+      `图片生成 ${imageGen.configured ? ui.green("✓") : ui.dim("—")}`,
+    ].join("  ");
+    console.log(`  ${ui.dim("API")}      ${apiLine}`);
   }
 
   console.log(

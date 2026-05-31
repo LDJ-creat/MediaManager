@@ -30,8 +30,13 @@ function testSetupWorkspace() {
   const { paths } = setupWorkspace(ws);
   assert.equal(fs.existsSync(paths.outputDir), true);
   assert.equal(fs.existsSync(paths.newsDataDir), true);
+  assert.equal(fs.existsSync(paths.secretsDir), true);
+  assert.equal(fs.existsSync(path.join(ws, ".gitignore")), true);
+  const gitignore = fs.readFileSync(path.join(ws, ".gitignore"), "utf8");
+  assert.ok(gitignore.includes(".media-manager/secrets/"));
   assert.equal(isGuidanceLayoutReady(paths.guidanceDir), true);
   assert.equal(fs.existsSync(path.join(paths.guidanceDir, "writing", "longform.md")), true);
+  assert.equal(fs.existsSync(path.join(paths.guidanceDir, "publishing", "platform", "wechat.md")), true);
   const global = readGlobalConfig();
   assert.ok(global);
   assert.equal(global!.workspace, path.resolve(ws));

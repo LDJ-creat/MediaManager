@@ -6,6 +6,26 @@ import { CLI_VERSION, GLOBAL_CONFIG_VERSION, WORKSPACE_CONFIG_VERSION, WORKSPACE
 import { findRepoRoot } from "./repo-root.js";
 import { ensureGuidanceLayout, seedGuidanceTemplates } from "./guidance-seed.js";
 
+const WORKSPACE_GITIGNORE_LINES = [".media-manager/secrets/", ".media-manager/auth/"];
+
+export function ensureWorkspaceGitignore(workspace: string): void {
+  const gitignorePath = path.join(path.resolve(workspace), ".gitignore");
+  const needed = WORKSPACE_GITIGNORE_LINES.filter((line) => {
+    if (!fs.existsSync(gitignorePath)) return true;
+    const content = fs.readFileSync(gitignorePath, "utf8");
+    return !content.split(/\r?\n/).some((existing) => existing.trim() === line);
+  });
+  if (needed.length === 0) return;
+
+  if (!fs.existsSync(gitignorePath)) {
+    fs.writeFileSync(gitignorePath, `${needed.join("\n")}\n`, "utf8");
+    return;
+  }
+
+  const prefix = fs.readFileSync(gitignorePath, "utf8").endsWith("\n") ? "" : "\n";
+  fs.appendFileSync(gitignorePath, `${prefix}${needed.join("\n")}\n`, "utf8");
+}
+
 export function getGlobalConfigDir(): string {
   return path.join(os.homedir(), ".media-manager");
 }
@@ -75,6 +95,7 @@ export function resolveWorkspacePaths(workspace: string): WorkspacePaths {
     mediaManagerDir,
     newsDataDir: path.join(mediaManagerDir, "data", "news"),
     authDir: path.join(mediaManagerDir, "auth"),
+    secretsDir: path.join(mediaManagerDir, "secrets"),
     analyticsDir: (platform: string) => path.join(mediaManagerDir, "data", "analytics", platform),
     authPlatformDir: (platform: string) => path.join(mediaManagerDir, "auth", platform),
     articleDir: (slug: string) => path.join(root, "output", slug),
@@ -90,6 +111,8 @@ export function ensureWorkspaceLayout(workspace: string): WorkspacePaths {
   fs.mkdirSync(paths.analysisDir, { recursive: true });
   fs.mkdirSync(paths.newsDataDir, { recursive: true });
   fs.mkdirSync(paths.authDir, { recursive: true });
+  fs.mkdirSync(paths.secretsDir, { recursive: true });
+  ensureWorkspaceGitignore(workspace);
   writeWorkspaceConfig(workspace);
   return paths;
 }

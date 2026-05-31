@@ -22,7 +22,7 @@ media wechat check-env
 media wechat post <article.md> [options]
 ```
 
-需在 skill 目录或工作区配置 `.env`（`WECHAT_APP_ID` / `WECHAT_APP_SECRET`）。路径相对于工作区。
+需在**工作区**配置 API 密钥（推荐 `media setup` 或 `media wechat config api`），写入 `.media-manager/secrets/wechat-api.env`。
 
 ## Language
 
@@ -35,7 +35,7 @@ media wechat post <article.md> [options]
 **Working directory & paths**:
 
 - CLI/file paths (e.g. `article.md`, `--cover cover.png`) are resolved relative to the current working directory. To avoid path mistakes, prefer absolute paths, or run commands from the directory that contains your article and images.
-- API credentials are loaded from environment variables first, then from `{baseDir}/.env` (skill root).
+- API credentials load priority: environment variables → `{workspace}/.media-manager/secrets/wechat-api.env` → `{baseDir}/.env` (skill root, legacy).
 
 | Script                         | Purpose                          |
 | ------------------------------ | -------------------------------- |

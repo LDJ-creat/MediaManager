@@ -1,10 +1,15 @@
 /// <reference path="./node-shims.d.ts" />
 
 import { spawnSync } from 'node:child_process';
-import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+import {
+  loadEnvFile,
+  loadWorkspaceSecretFile,
+  mergeEnvRecords,
+  WECHAT_API_ENV,
+} from '@dsmlll/media-manager-platform-common';
 
 interface CheckResult {
   name: string;
@@ -36,27 +41,31 @@ async function checkBun(): Promise<void> {
 }
 
 async function checkApiCredentials(): Promise<void> {
-  let found = false;
+  const workspaceEnv = loadWorkspaceSecretFile(WECHAT_API_ENV);
+  const skillRootEnv = loadEnvFile(getSkillRootEnvPath());
+  const merged = mergeEnvRecords(skillRootEnv, workspaceEnv);
+  const appId = process.env.WECHAT_APP_ID || merged.WECHAT_APP_ID;
+  const appSecret = process.env.WECHAT_APP_SECRET || merged.WECHAT_APP_SECRET;
 
-  // Check runtime environment first
-  if (process.env.WECHAT_APP_ID && process.env.WECHAT_APP_SECRET) {
-    log('API credentials', true, 'Found in environment variables');
-    found = true;
-  }
-
-  // Then check <skillRoot>/.env (parent directory of this script)
-  const skillRootEnv = getSkillRootEnvPath();
-  if (!found && fs.existsSync(skillRootEnv)) {
-    const content = fs.readFileSync(skillRootEnv, 'utf8');
-    if (content.includes('WECHAT_APP_ID')) {
-      log('API credentials', true, `Found in ${skillRootEnv}`);
-      found = true;
+  if (appId && appSecret) {
+    let detail = 'Found in environment variables';
+    if (!process.env.WECHAT_APP_ID && workspaceEnv.WECHAT_APP_ID) {
+      const secretsDir = process.env.MEDIA_SECRETS_DIR?.trim();
+      detail = secretsDir
+        ? `Found in ${path.join(secretsDir, WECHAT_API_ENV)}`
+        : 'Found in workspace secrets';
+    } else if (!process.env.WECHAT_APP_ID && skillRootEnv.WECHAT_APP_ID) {
+      detail = `Found in ${getSkillRootEnvPath()}`;
     }
+    log('API credentials', true, detail);
+    return;
   }
 
-  if (!found) {
-    log('API credentials', false, 'Not found. Set WECHAT_APP_ID and WECHAT_APP_SECRET in environment variables or in <skillRoot>/.env');
-  }
+  log(
+    'API credentials',
+    false,
+    'Not found. Run `media setup` or `media wechat config api`, or set WECHAT_APP_ID / WECHAT_APP_SECRET'
+  );
 }
 
 async function main(): Promise<void> {

@@ -3,6 +3,11 @@ import process from "node:process";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
+import {
+  IMAGE_GEN_ENV,
+  loadEnvFile,
+  loadWorkspaceSecretFile,
+} from "@dsmlll/media-manager-platform-common";
 import type {
   BatchFile,
   BatchTaskInput,
@@ -308,47 +313,22 @@ export function parseArgs(argv: string[]): CliArgs {
   return out;
 }
 
-async function loadEnvFile(p: string): Promise<Record<string, string>> {
-  try {
-    const content = await readFile(p, "utf8");
-    const env: Record<string, string> = {};
-    for (const line of content.split("\n")) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const idx = trimmed.indexOf("=");
-      if (idx === -1) continue;
-      const key = trimmed.slice(0, idx).trim();
-      let val = trimmed.slice(idx + 1).trim();
-      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-        val = val.slice(1, -1);
-      }
-      env[key] = val;
-    }
-    return env;
-  } catch {
-    return {};
-  }
-}
-
 async function loadEnv(): Promise<void> {
   const home = homedir();
   const cwd = process.cwd();
-
   const skillRoot = getSkillRootDir();
 
-  const skillEnv = await loadEnvFile(path.join(skillRoot, ".env"));
-  const cwdEnv = await loadEnvFile(path.join(cwd, ".config", "baoyu-image-gen", ".env"));
-  const homeEnv = await loadEnvFile(path.join(home, ".config", "baoyu-image-gen", ".env"));
+  const layers = [
+    loadEnvFile(path.join(skillRoot, ".env")),
+    loadEnvFile(path.join(home, ".config", "baoyu-image-gen", ".env")),
+    loadEnvFile(path.join(cwd, ".config", "baoyu-image-gen", ".env")),
+    loadWorkspaceSecretFile(IMAGE_GEN_ENV),
+  ];
 
-  for (const [k, v] of Object.entries(skillEnv)) {
-    if (!process.env[k]) process.env[k] = v;
-  }
-
-  for (const [k, v] of Object.entries(homeEnv)) {
-    if (!process.env[k]) process.env[k] = v;
-  }
-  for (const [k, v] of Object.entries(cwdEnv)) {
-    if (!process.env[k]) process.env[k] = v;
+  for (const layer of layers) {
+    for (const [k, v] of Object.entries(layer)) {
+      if (!process.env[k]) process.env[k] = v;
+    }
   }
 }
 

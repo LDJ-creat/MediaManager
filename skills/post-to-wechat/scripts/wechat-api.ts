@@ -6,6 +6,12 @@ import { spawnSync } from "node:child_process";
 import process from "node:process";
 import { Buffer } from "node:buffer";
 import { fileURLToPath } from "node:url";
+import {
+  loadEnvFile,
+  loadWorkspaceSecretFile,
+  mergeEnvRecords,
+  WECHAT_API_ENV,
+} from "@dsmlll/media-manager-platform-common";
 
 interface WechatConfig {
   appId: string;
@@ -78,46 +84,22 @@ function resolveLocalFilePath(inputPath: string, baseDir?: string): string {
   return baseCandidate || cwdCandidate;
 }
 
-function loadEnvFile(envPath: string): Record<string, string> {
-  const env: Record<string, string> = {};
-  if (!fs.existsSync(envPath)) return env;
-
-  const content = fs.readFileSync(envPath, "utf-8");
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eqIdx = trimmed.indexOf("=");
-    if (eqIdx > 0) {
-      const key = trimmed.slice(0, eqIdx).trim();
-      let value = trimmed.slice(eqIdx + 1).trim();
-      if ((value.startsWith('"') && value.endsWith('"')) ||
-          (value.startsWith("'") && value.endsWith("'"))) {
-        value = value.slice(1, -1);
-      }
-      env[key] = value;
-    }
-  }
-  return env;
-}
-
 function loadConfig(): WechatConfig {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
 
-  // We intentionally do NOT search parents from process.cwd().
-  // This keeps behavior stable across different launch directories in a monorepo.
-  // Config file location: <skillRoot>/.env (i.e., parent directory of this script).
   const skillRootEnvPath = path.resolve(__dirname, "..", ".env");
   const skillRootEnv = loadEnvFile(skillRootEnvPath);
+  const workspaceEnv = loadWorkspaceSecretFile(WECHAT_API_ENV);
 
-  // Priority: explicit environment variables -> nearest project .env
-  const appId = process.env.WECHAT_APP_ID || skillRootEnv.WECHAT_APP_ID;
-  const appSecret = process.env.WECHAT_APP_SECRET || skillRootEnv.WECHAT_APP_SECRET;
+  const merged = mergeEnvRecords(skillRootEnv, workspaceEnv);
+  const appId = process.env.WECHAT_APP_ID || merged.WECHAT_APP_ID;
+  const appSecret = process.env.WECHAT_APP_SECRET || merged.WECHAT_APP_SECRET;
 
   if (!appId || !appSecret) {
     throw new Error(
       "Missing WECHAT_APP_ID or WECHAT_APP_SECRET.\n" +
-      "Set via environment variables or in the nearest .env file."
+        "Run `media setup` or `media wechat config api`, or set environment variables / workspace secrets."
     );
   }
 
