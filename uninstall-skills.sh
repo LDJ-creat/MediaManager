@@ -48,7 +48,7 @@ if [ -d "$SKILLS_ROOT" ]; then
     skill_dirs+=("$d")
   done < <(find "$SKILLS_ROOT" -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | sort)
 fi
-if [ -d "$SCRIPT_DIR/guidance" ]; then
+if [ -d "$SCRIPT_DIR/skills/media-manager/references/guidance" ]; then
   skill_dirs+=("guidance")
 fi
 

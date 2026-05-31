@@ -45,9 +45,9 @@ for target in "${TARGET_DIRS[@]}"; do
         done
     fi
 
-    if [ -d "$SOURCE_DIR/guidance" ]; then
-        echo -e "  -> 同步 [\033[0;32m guidance \033[0m] 至 $target"
-        rsync -a "${EXCLUDE_ARGS[@]}" "$SOURCE_DIR/guidance/" "$target/guidance/"
+    if [ -d "$SOURCE_DIR/skills/media-manager/references/guidance" ]; then
+        echo -e "  -> 同步 [\033[0;32mguidance templates\033[0m] 至 $target"
+        rsync -a "${EXCLUDE_ARGS[@]}" "$SOURCE_DIR/skills/media-manager/references/guidance/" "$target/guidance/"
     fi
 done
 

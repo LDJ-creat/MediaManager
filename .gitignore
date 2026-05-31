@@ -24,12 +24,11 @@ __pycache__/
 csdn-output/
 build.mjs
 writing-guide.md
-xhs-images/
+output/**/xhs-images/
 发布命令.md
 
-# Local guidance content — structure tracked via .gitkeep, md bodies stay local
-guidance/topic-selection/**/*.md
-guidance/writing/**/*.md
+# Mode A workspace guidance (personal edits). Templates: skills/media-manager/references/guidance/
+/guidance/
 
 # --- skills/ sensitive and generated files (post Phase 0 layout) ---
 skills/**/.auth/

@@ -14,15 +14,13 @@ $targetDirs = @(
 $excludeDirs = @("node_modules", "output", "test-output", "test-output-archive", "test-output-live-v2", ".git", ".auth", "csdn-output", "xhs-output")
 $excludeFiles = @(".gitignore", "*.html", "sync-skills.ps1")
 
+$guidanceTemplate = Join-Path $sourceDir "skills\media-manager\references\guidance"
+
 $skillDirs = @()
 if (Test-Path $skillsRoot) {
     $skillDirs += Get-ChildItem -Path $skillsRoot -Directory | Where-Object {
         Test-Path (Join-Path $_.FullName "SKILL.md")
     }
-}
-$guidanceDir = Join-Path $sourceDir "guidance"
-if (Test-Path $guidanceDir) {
-    $skillDirs += Get-Item $guidanceDir
 }
 
 Write-Host "开始同步技能..." -ForegroundColor Cyan
@@ -45,6 +43,20 @@ foreach ($target in $targetDirs) {
             "/XD"
         ) + $excludeDirs + @("/XF") + $excludeFiles
 
+        & robocopy @roboArgs | Out-Null
+    }
+
+    if (Test-Path $guidanceTemplate) {
+        $guidanceDest = Join-Path $target "guidance"
+        Write-Host "  -> 同步 [guidance templates] 至 $target" -ForegroundColor Green
+        $roboArgs = @(
+            $guidanceTemplate,
+            $guidanceDest,
+            "/E", "/IS", "/IT",
+            "/R:0", "/W:0",
+            "/NJH", "/NJS", "/NDL", "/NC", "/NS",
+            "/XD"
+        ) + $excludeDirs + @("/XF") + $excludeFiles
         & robocopy @roboArgs | Out-Null
     }
 }
