@@ -1,6 +1,6 @@
 # 安装
 
-## Mode B（推荐终端用户）
+## Mode B（推荐终端/Agent端用户--在Claude Code，Cursor，OpenClaw等Agent端使用）
 
 ```bash
 npm install -g @dsmlll/media-manager-cli
@@ -22,6 +22,8 @@ npm run build
 media doctor
 ```
 
+`npm run build` 会编译 CLI 包、将 `skills/` 复制到 runtime bundle，并同步 workflow 到各 Agent 命令目录。详见 [sync.md](sync.md)。
+
 ## Skills 管理
 
 ```bash
@@ -31,9 +33,5 @@ media skill update
 media skill uninstall
 ```
 
-## 环境变量
 
-- `MEDIA_WORKSPACE`：覆盖工作区路径
-- `MEDIA_MANAGER_SKIP_SETUP=1`：跳过 postinstall 交互
-- `MEDIA_MANAGER_SKIP_SKILLS=1`：`media setup` 时跳过 Skills 安装
-- `MEDIA_MANAGER_SKIP_AUTH_SETUP=1`：`media setup` 时跳过平台凭证配置
+

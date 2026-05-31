@@ -30,12 +30,14 @@
 
 | 命令 | 说明 |
 |------|------|
-| `media wechat post ...` | 微信公众号草稿 |
+| `media wechat post ...` | 微信公众号草稿箱（返回 media_id 与后台编辑链接） |
 | `media wechat analytics fetch` | 公众号数据 |
-| `media csdn post --file <md> [--draft]` | CSDN 草稿 |
+| `media csdn post --file <md> [--draft]` | CSDN 草稿（返回编辑链接；不自动正式发布） |
 | `media csdn analytics fetch` | CSDN 数据 |
-| `media juejin post --file <md> [--draft]` | 掘金草稿 |
+| `media juejin post --file <md> [--draft]` | 掘金草稿（返回编辑链接；不自动正式发布） |
 | `media juejin analytics fetch` | 掘金数据 |
-| `media xhs post-note ...` | 小红书图文 |
+| `media xhs post-note ...` | 小红书图文**正式发布**（非草稿；`--draft` 无效） |
 | `media image gen --prompt "..." --image out.png` | AI 出图 |
 | `media analytics fetch --all` | 并行抓取各平台 analytics |
+
+微信 / CSDN / 掘金 / 小红书发布与数据 Skill 复用自 [media-skills](https://github.com/LDJ-creat/media-skills)。小红书因草稿无法跨设备共享，采用直接发布而非存草稿。

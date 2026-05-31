@@ -30,3 +30,4 @@ media csdn post --file $WORKSPACE/output/{slug}/article.md --draft
 ## 行为
 
 - 仅保存草稿，不自动正式发布
+- CLI 返回草稿编辑链接

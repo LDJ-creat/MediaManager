@@ -33,7 +33,6 @@ TARGET_DIRS=(
   "$HOME/.gemini/skills"
   "$HOME/.copilot/skills"
   "$HOME/.gemini/antigravity/skills"
-  "$HOME/.agent/skills"
 )
 
 # 与 PowerShell 脚本保持一致的排除项（仅用于源目录过滤，非删除时使用）

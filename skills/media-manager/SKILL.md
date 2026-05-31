@@ -28,13 +28,16 @@ description: MediaManager 总控 skill。当用户需要 RSS 选题写作、根�
 
 ## 子 Skill
 
-| Skill | 用途 |
-|-------|------|
-| article-writer | 长文 / 小红书笔记写作 |
-| article-illustrator | 长文配图 |
-| xhs-images | 小红书信息图轮播 |
-| news-skill | RSS 资讯 |
-| post-to-wechat / csdn / juejin / xiaohongshu-publish-and-data | 发布与数据 |
+| Skill | 用途 | 来源 |
+|-------|------|------|
+| article-writer | 长文 / 小红书笔记写作 | MediaManager 自研 |
+| article-illustrator | 长文配图 | MediaManager 自研 |
+| xhs-images | 小红书信息图轮播 | 基于 [baoyu-xhs-images](https://github.com/JimLiu/baoyu-skills/tree/main/skills/baoyu-xhs-images) 改造 |
+| news-skill | RSS 资讯 | MediaManager 自研 |
+| baoyu-image-gen | AI 出图 | [baoyu-image-gen](https://github.com/JimLiu/baoyu-skills/tree/main/skills/baoyu-image-gen) |
+| post-to-wechat / csdn / juejin / xiaohongshu-publish-and-data / get-wechat-data | 发布与数据 | [media-skills](https://github.com/LDJ-creat/media-skills) |
+
+发布行为：微信 / CSDN / 掘金 → 草稿箱并返回链接；小红书 → 正式发布（草稿无法跨设备共享）。详见 [platform-families.md](references/platform-families.md)。
 
 ## 常用命令
 

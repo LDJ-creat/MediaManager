@@ -1,0 +1,20 @@
+{
+  "workflows": [
+    {
+      "id": "daily-digest",
+      "description": "调用 media news 抓取 RSS、筛选评分并生成每日科技资讯 Markdown 日报"
+    },
+    {
+      "id": "write-and-publish",
+      "description": "选题、写作、配图并发布到 微信/CSDN/掘金/小红书"
+    },
+    {
+      "id": "publish-only",
+      "description": "将已有成稿发布到微信/CSDN/掘金/小红书，不涉及写作或配图生成"
+    },
+    {
+      "id": "analyze-operation",
+      "description": "抓取各平台运营数据、分析复盘并更新 guidance"
+    }
+  ]
+}
