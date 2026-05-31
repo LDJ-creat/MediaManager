@@ -1,11 +1,16 @@
-import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { findMonorepoRoot } from "@dsmlll/media-manager-core";
 import { getBundledSkillsDir } from "@dsmlll/media-manager-runtime";
-import { ui } from "./ui.js";
+import { spawnCommandSync } from "./spawn.js";
+import { ui, printStep } from "./ui.js";
+
+export interface SkillsAddResult {
+  code: number;
+  outputTail?: string;
+}
 
 export const SKILLS_REPO = "LDJ-creat/MediaManager";
 
@@ -39,8 +44,13 @@ export function listMediaManagerSkillNames(): string[] {
 function resolveSkillAgents(target: string): string[] {
   if (target === "cursor") return ["cursor"];
   if (target === "claude") return ["claude-code"];
-  return ["cursor", "claude-code"];
+  if (target === "codex") return ["codex"];
+  if (target === "all") return ["cursor", "claude-code", "codex"];
+  return ["cursor", "claude-code", "codex"];
 }
+
+export const SKILL_TARGET_OPTIONS = ["cursor", "claude", "codex", "all"] as const;
+export const SKILL_TARGET_DEFAULT = "all";
 
 function runMonorepoSyncIfPresent(): void {
   const repoRoot = findMonorepoRoot(path.dirname(fileURLToPath(import.meta.url)));
@@ -51,14 +61,50 @@ function runMonorepoSyncIfPresent(): void {
   );
   if (!fs.existsSync(syncScript)) return;
   if (process.platform === "win32") {
-    spawnSync("powershell", ["-ExecutionPolicy", "Bypass", "-File", syncScript], { stdio: "inherit" });
+    spawnCommandSync("powershell", ["-ExecutionPolicy", "Bypass", "-File", syncScript], { stdio: "inherit" });
   } else {
-    spawnSync("bash", [syncScript], { stdio: "inherit" });
+    spawnCommandSync("bash", [syncScript], { stdio: "inherit" });
   }
 }
 
-export function runSkillsAdd(flags: Record<string, string | boolean> = {}): number {
-  const target = typeof flags.target === "string" ? flags.target : "all";
+function tailOutput(text: string | null | undefined, max = 600): string | undefined {
+  if (!text?.trim()) return undefined;
+  const trimmed = text.trim();
+  return trimmed.length <= max ? trimmed : trimmed.slice(-max);
+}
+
+function inferSkillsFailureHint(tail?: string): string {
+  const lower = (tail ?? "").toLowerCase();
+  if (
+    /network|timeout|etimedout|econnrefused|enotfound|fetch failed|git clone|could not resolve|unable to access/i.test(
+      lower
+    )
+  ) {
+    return "可能由网络超时或 GitHub 连接失败导致";
+  }
+  return "安装过程出错";
+}
+
+export function printSkillsInstallFailureHint(outputTail?: string): void {
+  const hint = inferSkillsFailureHint(outputTail);
+  printStep(ui.yellow("⚠"), "Skills 安装未完成", hint);
+  if (outputTail) {
+    console.log(`\n  ${ui.dim("最近输出：")}`);
+    for (const line of outputTail.split(/\r?\n/).slice(-4)) {
+      if (line.trim()) console.log(`  ${ui.dim(line.trim())}`);
+    }
+  }
+  console.log(`\n  ${ui.dim("请检查网络后重试：")}`);
+  console.log(`  ${ui.blue("media skill install")}  ${ui.dim("— 重新安装")}`);
+  console.log(`  ${ui.blue("media skill update")}   ${ui.dim("— 从远程更新")}`);
+}
+
+export function runSkillsAdd(flags: Record<string, string | boolean> = {}): SkillsAddResult {
+  let target = typeof flags.target === "string" ? flags.target : SKILL_TARGET_DEFAULT;
+  if (!SKILL_TARGET_OPTIONS.includes(target as (typeof SKILL_TARGET_OPTIONS)[number])) {
+    console.warn(`${ui.yellow("⚠")} 未知 --target "${target}"，使用默认值 ${SKILL_TARGET_DEFAULT}`);
+    target = SKILL_TARGET_DEFAULT;
+  }
   const silent = flags.silent === true;
   const agents = resolveSkillAgents(target);
 
@@ -74,24 +120,26 @@ export function runSkillsAdd(flags: Record<string, string | boolean> = {}): numb
     ...agents.flatMap((a) => ["-a", a]),
   ];
 
-  const result = spawnSync("npx", args, {
+  const result = spawnCommandSync("npx", args, {
     stdio: silent ? "pipe" : "inherit",
-    shell: true,
     encoding: silent ? "utf8" : undefined,
   });
-  const status = result.status ?? 1;
-  if (status !== 0) {
-    if (silent && result.stderr) {
-      console.error(result.stderr.slice(-500));
+  const code = result.status ?? 1;
+  if (code !== 0) {
+    const outputTail = silent
+      ? tailOutput(`${result.stderr ?? ""}\n${result.stdout ?? ""}`)
+      : undefined;
+    if (!silent) {
+      printSkillsInstallFailureHint(outputTail);
     }
-    return status;
+    return { code, outputTail };
   }
 
   runMonorepoSyncIfPresent();
-  return 0;
+  return { code: 0 };
 }
 
-export function runSkillsUpdate(flags: Record<string, string | boolean> = {}): number {
+export function runSkillsUpdate(flags: Record<string, string | boolean> = {}): SkillsAddResult {
   return runSkillsAdd(flags);
 }
 
