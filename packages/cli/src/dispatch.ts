@@ -590,8 +590,17 @@ export async function dispatch(argv: string[]): Promise<number> {
   return 1;
 }
 
+function getCliVersion(): string {
+  try {
+    const pkgPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "package.json");
+    return (JSON.parse(fs.readFileSync(pkgPath, "utf8")) as { version: string }).version;
+  } catch {
+    return "unknown";
+  }
+}
+
 function printHelp() {
-  console.log(`MediaManager CLI (media) v0.1.0
+  console.log(`MediaManager CLI (media) v${getCliVersion()}
 
 Setup:
   media setup [--interactive] [--workspace <path>]
