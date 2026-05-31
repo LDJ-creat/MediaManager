@@ -14,7 +14,7 @@ export const ui = {
   cyan: (t: string) => wrap("36", t),
   green: (t: string) => wrap("32", t),
   yellow: (t: string) => wrap("33", t),
-  blue: (t: string) => wrap("34", t),
+  blue: (t: string) => wrap("94", t),
   magenta: (t: string) => wrap("35", t),
   red: (t: string) => wrap("31", t),
 };
