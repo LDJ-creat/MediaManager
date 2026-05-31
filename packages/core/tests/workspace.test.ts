@@ -5,11 +5,12 @@ import path from "node:path";
 import {
   ensureWorkspaceLayout,
   getDefaultWorkspacePath,
+  isGuidanceLayoutReady,
   readGlobalConfig,
   resolveWorkspace,
   setupWorkspace,
   writeGlobalConfig,
-} from "../src/workspace.js";
+} from "../src/index.js";
 
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "mm-core-test-"));
 
@@ -29,6 +30,8 @@ function testSetupWorkspace() {
   const { paths } = setupWorkspace(ws);
   assert.equal(fs.existsSync(paths.outputDir), true);
   assert.equal(fs.existsSync(paths.newsDataDir), true);
+  assert.equal(isGuidanceLayoutReady(paths.guidanceDir), true);
+  assert.equal(fs.existsSync(path.join(paths.guidanceDir, "writing", "longform.md")), true);
   const global = readGlobalConfig();
   assert.ok(global);
   assert.equal(global!.workspace, path.resolve(ws));
