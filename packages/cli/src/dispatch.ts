@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   ensureWorkspaceLayout,
   getDefaultWorkspacePath,
+  isGuidanceLayoutReady,
   resolveWorkspace,
   setupWorkspace,
 } from "@dsmlll/media-manager-core";
@@ -405,7 +406,7 @@ export function runDoctor(): number {
 
     const paths = ensureWorkspaceLayout(workspace);
     check(fs.existsSync(paths.outputDir), "output/ skeleton");
-    check(fs.existsSync(paths.guidanceDir), "guidance/ skeleton");
+    check(isGuidanceLayoutReady(paths.guidanceDir), "guidance/ layout");
     check(fs.existsSync(paths.newsDataDir), ".media-manager/data/news/ skeleton");
   } catch {
     check(false, "Workspace not configured — run `media setup`", true);
