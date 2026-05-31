@@ -5,6 +5,8 @@ description: 每日科技资讯聚合工具，从多个优质RSS源（Anthropic�
 
 > **编排入口**：多 skill 组合流程请使用 [`media-manager`](../media-manager/SKILL.md) 总控 skill 与 `media` CLI。本 skill 为 deep-dive。
 
+**调用方式**：在 write-and-publish 流程中，主编排 Agent **优先 Subagent 委派**本 skill 完成 RSS 抓取、筛选与去重；不支持 Subagent 时 inline 同等流程。见 [`orchestration.md`](../media-manager/references/orchestration.md)。
+
 # 每日科技资讯 Skill
 
 **架构说明**：此 Skill 只负责数据 I/O（抓取文章 + 持久化去重记录）。**你（LLM）是唯一的分析引擎**，负责评分、筛选、分类、翻译和摘要。

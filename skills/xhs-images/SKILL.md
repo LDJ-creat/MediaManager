@@ -5,6 +5,8 @@ description: Generates Xiaohongshu infographic series for MediaManager. Breaks n
 
 > **编排入口**：多 skill 组合流程请使用 [`media-manager`](../media-manager/SKILL.md) 总控 skill 与 `media` CLI。本 skill 为 deep-dive。
 
+**调用方式**：在 write-and-publish Step 4（xhs / full-stack 分支），主编排 **优先 Subagent 委派**本 skill；不支持 Subagent 时 inline 同等流程。见 [`orchestration.md`](../media-manager/references/orchestration.md)。
+
 # XHS Images
 
 为小红书笔记生成信息图轮播。输入 `note.md`（或从 `article.md` 提炼），输出到 `output/{slug}/xhs-images/`，并回写 `note.md` frontmatter `images:`。

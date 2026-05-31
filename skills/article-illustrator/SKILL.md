@@ -5,6 +5,8 @@ description: "为写好的 Markdown 文章设计配图提示词并生成图片�
 
 > **编排入口**：多 skill 组合流程请使用 [`media-manager`](../media-manager/SKILL.md) 总控 skill 与 `media` CLI。本 skill 为 deep-dive。
 
+**调用方式**：在 write-and-publish Step 4（longform 分支），主编排 **优先 Subagent 委派**本 skill；不支持 Subagent 时 inline 同等流程。见 [`orchestration.md`](../media-manager/references/orchestration.md)。
+
 # Article Illustrator
 
 为文章设计并生成配图。读取 `article-writer` 输出的文章，解析配图占位符，设计提示词，调用 `baoyu-image-gen` 生成图片，回写文章。

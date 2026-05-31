@@ -60,9 +60,11 @@ output/{slug}/
 
 | 用户选择 | 行为 |
 |----------|------|
-| longform-only | 一篇 `article.md` → article-illustrator → 发布到所选 longform 平台 |
-| xhs-only | `note.md` → xhs-images → post-note |
+| longform-only | 一篇 `article.md` → Subagent `article-illustrator` → 发布到所选 longform 平台 |
+| xhs-only | `note.md` → Subagent `xhs-images` → post-note |
 | full-stack | 共享选题（默认同题）→ 分叉提纲 → 并行 longform + xhs 产出 |
+
+平台未指明时的选择器 / 自然语言询问，以及 Subagent 委派细则见 [orchestration.md](orchestration.md)。
 
 ## frontmatter 发布变体（可选）
 

@@ -82,7 +82,7 @@ images: []
 
 **分支 A — 用户已提供选题**：进入 Step 2。
 
-**分支 B — 无明确选题**：Subagent 优先调用 news-skill；否则 inline 同等流程。
+**分支 B — 无明确选题**：**优先 Subagent 委派 `news-skill`**（完整 daily-digest + news-skill 流程）；不支持 Subagent 时 inline 同等流程。见 [`media-manager` orchestration.md](../media-manager/references/orchestration.md)。
 
 Subagent / inline 均需：
 
