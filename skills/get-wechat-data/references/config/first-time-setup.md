@@ -16,7 +16,7 @@ Auth：`$WORKSPACE/.media-manager/auth/wechat/storageState.json`
 
 ## 1. Install runtime
 
-Node.js 20+ and `@media-manager/cli`.
+Node.js 20+ and `@dsmlll/media-manager-cli`.
 
 ## 2. Script dependencies（Deep-dive）
 

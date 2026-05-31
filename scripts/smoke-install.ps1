@@ -14,7 +14,7 @@ npm test
 
 $globalInstalled = $false
 try {
-  Write-Host "== smoke: global install @media-manager/cli from local package ==" -ForegroundColor Cyan
+  Write-Host "== smoke: global install @dsmlll/media-manager-cli from local package ==" -ForegroundColor Cyan
   npm install -g (Join-Path $repoRoot "packages\cli")
   if ($LASTEXITCODE -ne 0) { throw "global install failed" }
   $globalInstalled = $true
@@ -39,7 +39,7 @@ try {
 finally {
   if ($globalInstalled) {
     Write-Host "== smoke: cleanup global install ==" -ForegroundColor DarkGray
-    npm uninstall -g @media-manager/cli 2>$null
+    npm uninstall -g @dsmlll/media-manager-cli 2>$null
   }
   if (Test-Path $tempRoot) {
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue

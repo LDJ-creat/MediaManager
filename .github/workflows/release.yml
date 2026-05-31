@@ -17,15 +17,15 @@ jobs:
       - run: npm install
       - run: npm run build
       - run: npm test
-      - run: npm publish -w @media-manager/core --access public
+      - run: npm publish -w @dsmlll/media-manager-core --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - run: npm publish -w @media-manager/platform-common --access public
+      - run: npm publish -w @dsmlll/media-manager-platform-common --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - run: npm publish -w @media-manager/runtime --access public
+      - run: npm publish -w @dsmlll/media-manager-runtime --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - run: npm publish -w @media-manager/cli --access public
+      - run: npm publish -w @dsmlll/media-manager-cli --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

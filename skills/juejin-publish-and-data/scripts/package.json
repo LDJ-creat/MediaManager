@@ -15,7 +15,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@media-manager/platform-common": "0.1.0",
+    "@dsmlll/media-manager-platform-common": "0.1.0",
     "gray-matter": "^4.0.3",
     "playwright": "^1.58.2"
   }

@@ -7,7 +7,7 @@ import {
   parseKeyValueMarkdown,
   resolveAnalyticsDir,
   resolveAuthFileRef,
-} from "@media-manager/platform-common";
+} from "@dsmlll/media-manager-platform-common";
 import matter from "gray-matter";
 import type {
   AuthFileRef,

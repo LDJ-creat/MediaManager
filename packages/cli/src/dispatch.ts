@@ -10,8 +10,8 @@ import {
   readGlobalConfig,
   resolveWorkspace,
   setupWorkspace,
-} from "@media-manager/core";
-import { resolveSkillScript } from "@media-manager/runtime";
+} from "@dsmlll/media-manager-core";
+import { resolveSkillScript } from "@dsmlll/media-manager-runtime";
 
 export interface ParsedArgs {
   command: string[];

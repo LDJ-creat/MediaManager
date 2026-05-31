@@ -1,5 +1,5 @@
 {
-  "name": "@media-manager/core",
+  "name": "@dsmlll/media-manager-core",
   "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",

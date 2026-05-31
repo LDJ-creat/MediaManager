@@ -19,7 +19,7 @@ This skill is designed to work on Windows, macOS, and Linux.
 
 ## 1. Install runtime
 
-Preferred runtime: Node.js 20+. Install `@media-manager/cli` or run from MediaManager monorepo after `npm run build`.
+Preferred runtime: Node.js 20+. Install `@dsmlll/media-manager-cli` or run from MediaManager monorepo after `npm run build`.
 
 ## 2. Install script dependencies（Deep-dive）
 
