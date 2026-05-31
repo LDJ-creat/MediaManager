@@ -12,6 +12,12 @@ import {
   setupWorkspace,
 } from "@dsmlll/media-manager-core";
 import { resolveSkillScript } from "@dsmlll/media-manager-runtime";
+import {
+  isMediaManagerSkillInstalled,
+  runSkillsAdd,
+  runSkillsUninstall,
+  runSkillsUpdate,
+} from "./skills.js";
 import { formatDoctorLine, printBanner, printStep, ui } from "./ui.js";
 
 export interface ParsedArgs {
@@ -202,9 +208,19 @@ export async function runSetup(flags: Record<string, string | boolean>): Promise
     await promptPlatformAuthSetup(paths.workspace);
   }
 
+  if (flags["skip-skills"] !== true && process.env.MEDIA_MANAGER_SKIP_SKILLS !== "1") {
+    console.log("");
+    printStep(ui.cyan("▸"), "正在安装 Skills", ui.dim("首次可能需要几分钟"));
+    const skillCode = runSkillsAdd({ silent: true, target: typeof flags.target === "string" ? flags.target : "all" });
+    if (skillCode === 0) {
+      printStep(ui.green("✓"), "Skills 安装成功", "");
+    } else {
+      printStep(ui.yellow("⚠"), "Skills 安装未完成", "可稍后运行 media skill update");
+    }
+  }
+
   console.log("");
   printStep(ui.cyan("▸"), "建议下一步");
-  console.log(`  ${ui.blue("npx skills add LDJ-creat/MediaManager --skill media-manager -g -y")}`);
   console.log(`  ${ui.blue("media doctor")}`);
   console.log("");
   return 0;
@@ -401,15 +417,10 @@ export function runDoctor(): number {
     check(false, "Runtime skills not found — run npm run build in repo");
   }
 
-  const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
-  const skillPaths = [
-    path.join(home, ".cursor", "skills", "media-manager", "SKILL.md"),
-    path.join(home, ".claude", "skills", "media-manager", "SKILL.md"),
-  ];
-  if (!skillPaths.some((p) => fs.existsSync(p))) {
-    check(false, "media-manager skill not installed globally — run `media skill install --minimal`");
+  if (!isMediaManagerSkillInstalled()) {
+    check(false, "Skills 未安装 — 运行 `media skill install` 或 `media setup`");
   } else {
-    check(true, "media-manager skill installed");
+    check(true, "Skills 已安装");
   }
 
   if (workspace) {
@@ -532,44 +543,24 @@ export async function runAnalyticsFetchAll(
 }
 
 export function runSkillInstall(flags: Record<string, string | boolean>): number {
-  const minimal = flags.minimal === true;
-  const target = typeof flags.target === "string" ? flags.target : "all";
-  const agents =
-    target === "cursor"
-      ? ["cursor"]
-      : target === "claude"
-        ? ["claude-code"]
-        : ["cursor", "claude-code"];
-
-  const args = [
-    "skills",
-    "add",
-    "LDJ-creat/MediaManager",
-    "--skill",
-    minimal ? "media-manager" : "*",
-    "-g",
-    "-y",
-    ...agents.flatMap((a) => ["-a", a]),
-  ];
-  if (!minimal) args.push("--all");
-
-  const status = spawnSync("npx", args, { stdio: "inherit", shell: true }).status ?? 1;
-  if (status !== 0) return status;
-
-  if (!minimal) {
-    const repoRoot = findMonorepoRoot(path.dirname(fileURLToPath(import.meta.url)));
-    const syncScript = repoRoot
-      ? path.join(repoRoot, process.platform === "win32" ? "sync-skills.ps1" : "sync-skills.sh")
-      : null;
-    if (syncScript && fs.existsSync(syncScript)) {
-      if (process.platform === "win32") {
-        spawnSync("powershell", ["-ExecutionPolicy", "Bypass", "-File", syncScript], { stdio: "inherit" });
-      } else {
-        spawnSync("bash", [syncScript], { stdio: "inherit" });
-      }
-    }
+  const code = runSkillsAdd(flags);
+  if (code === 0) {
+    console.log(`\n${ui.green("✓")} Skills 安装成功`);
   }
-  return 0;
+  return code;
+}
+
+export function runSkillUpdate(flags: Record<string, string | boolean>): number {
+  console.log(ui.cyan("正在从远程仓库更新 Skills…"));
+  const code = runSkillsUpdate(flags);
+  if (code === 0) {
+    console.log(`\n${ui.green("✓")} Skills 更新成功`);
+  }
+  return code;
+}
+
+export function runSkillUninstall(flags: Record<string, string | boolean>): number {
+  return runSkillsUninstall(flags);
 }
 
 export async function dispatch(argv: string[]): Promise<number> {
@@ -587,6 +578,8 @@ export async function dispatch(argv: string[]): Promise<number> {
   if (c0 === "init") return runInit(flags, positional);
   if (c0 === "doctor") return runDoctor();
   if (c0 === "skill" && c1 === "install") return runSkillInstall(flags);
+  if (c0 === "skill" && c1 === "update") return runSkillUpdate(flags);
+  if (c0 === "skill" && c1 === "uninstall") return runSkillUninstall(flags);
 
   let workspace: string;
   try {
@@ -690,11 +683,13 @@ function printHelp() {
   console.log(`MediaManager CLI (media) v${getCliVersion()}
 
 Setup:
-  media setup [--interactive] [--workspace <path>] [--skip-auth]
+  media setup [--interactive] [--workspace <path>] [--skip-auth] [--skip-skills]
   media workspace show|set <path>
   media init [path] [--with-cursor]
   media doctor
-  media skill install [--minimal] [--target cursor|claude|all]
+  media skill install [--target cursor|claude|all]
+  media skill update [--target cursor|claude|all]
+  media skill uninstall
 
 News:
   media news fetch [--hours N] [--preview] [--skip-dedup]
