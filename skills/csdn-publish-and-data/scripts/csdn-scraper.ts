@@ -15,6 +15,7 @@ import type {
   CapturedResponse,
   ConcretePageType,
   CookieFileEntry,
+  CoverUploadResult,
   CrawlResult,
   PageFallbackState,
   PublishRequest,
@@ -547,11 +548,22 @@ async function clickButtonByPattern(page: Page, patterns: RegExp[]): Promise<boo
 }
 
 async function fillTitle(page: Page, value: string): Promise<boolean> {
-  // 编辑器首屏有时加载较慢：先短暂等待标题框出现，避免瞬时检查导致误判。
+  // 新版编辑器默认展示 .article-bar__title-display，真实 input 为 display:none，需先点击激活。
   await page.waitForSelector(
-    "input.article-bar__title, input.article-bar__title--input, #txtTitle, textarea#txtTitle, input[placeholder*='标题'], textarea[placeholder*='标题'], textarea.input__title",
+    "input.article-bar__title, input.article-bar__title--input, .article-bar__title-display, #txtTitle, textarea#txtTitle, input[placeholder*='标题'], textarea[placeholder*='标题'], textarea.input__title",
     { timeout: 15_000 }
   ).catch(() => undefined);
+
+  const titleInput = page.locator("input.article-bar__title, input.article-bar__title--input").first();
+  if (!(await titleInput.isVisible().catch(() => false))) {
+    const titleDisplay = page.locator(".article-bar__title-display").first();
+    if (await ensureVisible(titleDisplay)) {
+      await titleDisplay.click({ timeout: 3_000 }).catch(() => undefined);
+    } else {
+      await page.locator(".layout__panel--articletitle-bar, .article-bar").first().click({ force: true, timeout: 3_000 }).catch(() => undefined);
+    }
+    await page.waitForTimeout(500);
+  }
 
   const selectors = [
     "input.article-bar__title",
@@ -566,8 +578,20 @@ async function fillTitle(page: Page, value: string): Promise<boolean> {
 
   for (const selector of selectors) {
     const locator = page.locator(selector).first();
-    if (!(await ensureVisible(locator))) continue;
+    if (!(await locator.count())) continue;
     if (await fillLocator(locator, value)) {
+      return true;
+    }
+    const filled = await locator.evaluate((element, text) => {
+      const node = element as HTMLInputElement;
+      node.style.display = "block";
+      node.style.visibility = "visible";
+      node.value = text;
+      node.dispatchEvent(new Event("input", { bubbles: true }));
+      node.dispatchEvent(new Event("change", { bubbles: true }));
+      return node.value === text;
+    }, value).catch(() => false);
+    if (filled) {
       return true;
     }
   }
@@ -866,6 +890,7 @@ async function openPublishDialog(page: Page): Promise<boolean> {
 
 async function waitForPublishDialog(page: Page, timeoutMs: number): Promise<Locator | null> {
   const candidates: Locator[] = [
+    page.locator(".modal").filter({ hasText: /发布文章|保存为草稿|文章标签|添加封面/ }).first(),
     page.getByRole("dialog").filter({ hasText: /发布文章|保存为草稿|文章标签|添加封面/ }).first(),
     page.locator(".el-dialog").filter({ hasText: /发布文章|保存为草稿|文章标签|添加封面/ }).first(),
     page.locator(".ant-modal").filter({ hasText: /发布文章|保存为草稿|文章标签|添加封面/ }).first(),
@@ -1436,92 +1461,111 @@ async function tryFillPublishDialogTags(page: Page, dialog: Locator, tags: strin
   }
 }
 
-async function maybeConfirmCoverUpload(page: Page): Promise<boolean> {
-  // “图片编辑”弹窗里的“确认上传”有时不是 button，而是 div.vicp-operate-btn。
-  const confirmButton = page.getByRole("button", { name: /确认上传/ }).last();
-  const confirmDiv = page.locator(".vicp-operate-btn").filter({ hasText: /确认上传/ }).last();
-  const confirmTextTarget = page.locator("div, span").filter({ hasText: /^确认上传$/ }).last();
-  const dialogTitle = page.getByText(/图片编辑/).first();
-
-  const deadline = Date.now() + 12_000;
-  while (Date.now() < deadline) {
-    const titleVisible = await ensureVisible(dialogTitle);
-    const buttonVisible = await ensureVisible(confirmButton);
-    const divVisible = await ensureVisible(confirmDiv);
-    const textVisible = await ensureVisible(confirmTextTarget);
-    if (titleVisible || buttonVisible || divVisible || textVisible) {
-      if (buttonVisible) {
-        await confirmButton.click({ timeout: 2_000 }).catch(() => undefined);
-      } else if (divVisible) {
-        await confirmDiv.click({ timeout: 2_000 }).catch(() => undefined);
-      } else if (textVisible) {
-        await confirmTextTarget.click({ timeout: 2_000 }).catch(() => undefined);
-      }
-      await page.waitForTimeout(300);
-      // 等待对话框消失
-      const stillThere = await ensureVisible(dialogTitle);
-      if (!stillThere) return true;
-    }
-    await page.waitForTimeout(200);
-  }
-
-  return false;
+async function getCoverPreviewUrl(dialog: Locator): Promise<string | null> {
+  const previewImg = dialog.locator(".container-coverimage-box img.preview").first();
+  if (!(await previewImg.count())) return null;
+  const src = (await previewImg.getAttribute("src").catch(() => null))?.trim() ?? "";
+  if (/csdnimg\.cn\/direct\//i.test(src)) return src;
+  return null;
 }
 
-async function isCoverPreviewVisible(dialog: Locator): Promise<boolean> {
-  // 发布面板通常会出现“封面图预览”或上传区域内出现 img 预览。
-  const previewText = dialog.getByText(/封面图预览/).first();
-  if (await ensureVisible(previewText)) return true;
-
-  // CSDN 真实 DOM：container-coverimage-box 下的 img.preview 会有 src。
-  const previewImg = dialog.locator(".container-coverimage-box img.preview, img.preview").first();
-  if (await ensureVisible(previewImg)) {
-    const src = await previewImg.getAttribute("src").catch(() => null);
-    if (src && src.trim()) return true;
-  }
-
-  const coverArea = dialog.locator("div:has-text('添加封面')").first();
-  const scope = await ensureVisible(coverArea) ? coverArea : dialog;
-  const img = scope.locator("img").first();
-  return ensureVisible(img);
+async function waitForCoverCropDialog(page: Page, timeoutMs = 15_000): Promise<boolean> {
+  const cropWrap = page.locator(".container-coverimage-box .vue-image-crop-upload .vicp-wrap, .vue-image-crop-upload .vicp-wrap").first();
+  await cropWrap.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined);
+  return ensureVisible(cropWrap);
 }
 
-async function waitForCoverPreview(page: Page, dialog: Locator, timeoutMs: number): Promise<boolean> {
-  const deadline = Date.now() + Math.min(timeoutMs, 12_000);
+async function confirmCoverCropDialog(page: Page): Promise<boolean> {
+  const confirmBtn = page
+    .locator(".vue-image-crop-upload .vicp-operate-btn, .container-coverimage-box .vicp-operate-btn")
+    .filter({ hasText: /^确认上传$/ })
+    .first();
+
+  if (!(await ensureVisible(confirmBtn))) {
+    return false;
+  }
+
+  await confirmBtn.click({ timeout: 3_000 }).catch(async () => {
+    await confirmBtn.evaluate((el) => (el as HTMLElement).click());
+  });
+
+  const cropWrap = page.locator(".vue-image-crop-upload .vicp-wrap").first();
+  await cropWrap.waitFor({ state: "hidden", timeout: 12_000 }).catch(() => undefined);
+  await page.waitForTimeout(400);
+  return !(await ensureVisible(cropWrap));
+}
+
+async function dismissCoverCropOverlay(page: Page): Promise<void> {
+  const cropWrap = page.locator(".vue-image-crop-upload .vicp-wrap").first();
+  if (!(await ensureVisible(cropWrap))) return;
+
+  const confirmed = await confirmCoverCropDialog(page);
+  if (confirmed) return;
+
+  const closeBtn = page.locator(".vue-image-crop-upload .vicp-close").first();
+  if (await ensureVisible(closeBtn)) {
+    await closeBtn.click({ timeout: 1_500 }).catch(() => undefined);
+    await page.waitForTimeout(300);
+  }
+}
+
+async function waitForCoverPreview(page: Page, dialog: Locator, timeoutMs: number): Promise<string | null> {
+  const deadline = Date.now() + Math.min(timeoutMs, 15_000);
   while (Date.now() < deadline) {
-    if (await isCoverPreviewVisible(dialog)) return true;
+    const coverUrl = await getCoverPreviewUrl(dialog);
+    if (coverUrl) return coverUrl;
     await page.waitForTimeout(250).catch(() => undefined);
   }
-  return false;
+  return null;
 }
 
-async function tryUploadPublishDialogCover(page: Page, dialog: Locator, coverPath: string | undefined, warnings: string[]): Promise<boolean> {
-  if (!coverPath) return false;
-  // 封面上传控件在 .cover-upload-box 内，避免误命中编辑器其它 file input。
-  const input = dialog.locator(".cover-upload-box input[type='file'], .el_mcm-upload__input[type='file'], .el_mcm-upload input[type='file']").first();
+async function dismissBlockingModals(page: Page): Promise<void> {
+  await dismissCoverCropOverlay(page);
+}
+
+async function tryUploadPublishDialogCover(
+  page: Page,
+  dialog: Locator,
+  coverPath: string | undefined,
+  warnings: string[],
+): Promise<CoverUploadResult> {
+  if (!coverPath) return { applied: false };
+
+  const input = dialog.locator(
+    ".cover-upload-box input[type='file'], .container-coverimage-box input[type='file'], .el-upload input[type='file']",
+  ).first();
   const hasInput = await input.count().then((count) => count > 0).catch(() => false);
   if (!hasInput) {
     warnings.push(`未定位到封面上传控件，已跳过封面上传：${coverPath}`);
-    return false;
+    return { applied: false };
   }
 
   try {
-    await input.setInputFiles(coverPath);
-
-    // CSDN 可能弹出“图片编辑”对话框，需要点“确认上传”才能完成封面设置。
-    await maybeConfirmCoverUpload(page).catch(() => undefined);
-
-    // 给预览/回写一点时间（上传 + 裁剪确认后异步更新）。
-    const confirmed = await waitForCoverPreview(page, dialog, 10_000);
-    if (!confirmed) {
-      warnings.push("封面上传已执行，但未在发布面板中检测到封面预览；可能需要手动点击上传区域并确认。"
-      );
+    const existingUrl = await getCoverPreviewUrl(dialog);
+    if (existingUrl) {
+      return { applied: true, coverUrl: existingUrl };
     }
 
-    return true;
+    await input.setInputFiles(coverPath);
+    await waitForCoverCropDialog(page);
+
+    const confirmed = await confirmCoverCropDialog(page);
+    if (!confirmed) {
+      warnings.push("封面上传裁剪框未成功确认，已尝试关闭遮挡层。");
+      await dismissCoverCropOverlay(page);
+    }
+
+    const coverUrl = await waitForCoverPreview(page, dialog, 12_000);
+    if (!coverUrl) {
+      warnings.push("封面上传已执行，但未检测到有效的封面预览 URL；请在草稿中手动确认封面。");
+      return { applied: false };
+    }
+
+    return { applied: true, coverUrl };
   } catch (error) {
     warnings.push(`封面上传失败：${error instanceof Error ? error.message : String(error)}`);
-    return false;
+    await dismissCoverCropOverlay(page).catch(() => undefined);
+    return { applied: false };
   }
 }
 
@@ -1530,15 +1574,6 @@ async function clickDialogSubmit(
   dialog: Locator,
 ): Promise<{ clicked: boolean; detail?: string }> {
   const patterns = [/^保存为草稿$/, /保存为草稿/, /^保存草稿$/, /保存草稿/, /保存到草稿箱/, /草稿箱/];
-
-  const scopes: Array<{ name: string; scope: Locator | Page }> = [
-    { name: "dialog", scope: dialog },
-    { name: "page", scope: page },
-  ];
-
-  const isPage = (value: Locator | Page): value is Page => {
-    return typeof (value as Page).getByRole === "function" && typeof (value as Page).locator === "function";
-  };
 
   const describeLocator = async (locator: Locator): Promise<string> => {
     const text = await locator.evaluate((el) => {
@@ -1566,44 +1601,52 @@ async function clickDialogSubmit(
         await item.click({ timeout: 2_000 });
         return { ok: true, clickedText: await describeLocator(item) };
       } catch {
-        // try next
+        try {
+          await item.click({ force: true, timeout: 1_500 });
+          return { ok: true, clickedText: await describeLocator(item) };
+        } catch {
+          // try next
+        }
       }
     }
     return { ok: false };
   };
 
-  const getByRole = (scope: Locator | Page, name: RegExp): Locator => {
-    return isPage(scope)
-      ? scope.getByRole("button", { name })
-      : scope.getByRole("button", { name });
-  };
+  const prioritizedSelectors = [
+    dialog.locator(".modal__button-bar button").filter({ hasText: /^保存为草稿$|^保存草稿$/ }),
+    page.locator(".modal__button-bar button").filter({ hasText: /^保存为草稿$|^保存草稿$/ }),
+    dialog.locator(".el-dialog__footer button, .dialog-footer button").filter({ hasText: /保存为草稿|保存草稿/ }),
+    page.locator(".el-dialog__footer button, .dialog-footer button").filter({ hasText: /保存为草稿|保存草稿/ }),
+    dialog.locator("button").filter({ hasText: /^保存为草稿$|^保存草稿$/ }),
+    page.locator("button").filter({ hasText: /^保存为草稿$|^保存草稿$/ }),
+  ];
 
-  const locatorByText = (scope: Locator | Page, pattern: RegExp): Locator => {
-    return isPage(scope)
-      ? scope.locator("button, a, span, div").filter({ hasText: pattern })
-      : scope.locator("button, a, span, div").filter({ hasText: pattern });
-  };
+  for (const candidate of prioritizedSelectors) {
+    const result = await clickFirstVisible(candidate).catch(() => ({ ok: false, clickedText: undefined }));
+    if (result.ok) {
+      return { clicked: true, detail: `priority ${result.clickedText ?? ""}`.trim() };
+    }
+  }
 
-  const footerDraftButtons = page.locator(
-    ".el-dialog__footer button, .el_mcm-dialog__footer button, .dialog-footer button"
-  ).filter({ hasText: /草稿/ });
-  const r = await clickFirstVisible(footerDraftButtons).catch(() => ({ ok: false, clickedText: undefined }));
-  if (r.ok) return { clicked: true, detail: `scope=footer pattern=/草稿/ ${r.clickedText ?? ""}`.trim() };
+  const scopes: Array<{ name: string; scope: Locator | Page }> = [
+    { name: "dialog", scope: dialog },
+    { name: "page", scope: page },
+  ];
 
-  for (const { scope } of scopes) {
+  for (const { name, scope } of scopes) {
     for (const pattern of patterns) {
-      const button = getByRole(scope, pattern);
-      const r_role = await clickFirstVisible(button).catch(() => ({ ok: false, clickedText: undefined }));
-      if (r_role.ok) {
-        return { clicked: true, detail: `scope=${isPage(scope) ? "page" : "dialog"} byRole pattern=${pattern} ${r_role.clickedText ?? ""}`.trim() };
+      const button = scope.getByRole("button", { name: pattern });
+      const result = await clickFirstVisible(button).catch(() => ({ ok: false, clickedText: undefined }));
+      if (result.ok) {
+        return { clicked: true, detail: `scope=${name} byRole pattern=${pattern} ${result.clickedText ?? ""}`.trim() };
       }
     }
 
     for (const pattern of patterns) {
-      const textTarget = locatorByText(scope, pattern);
-      const r_text = await clickFirstVisible(textTarget).catch(() => ({ ok: false, clickedText: undefined }));
-      if (r_text.ok) {
-        return { clicked: true, detail: `scope=${isPage(scope) ? "page" : "dialog"} byText pattern=${pattern} ${r_text.clickedText ?? ""}`.trim() };
+      const textTarget = scope.locator("button, a").filter({ hasText: pattern });
+      const result = await clickFirstVisible(textTarget).catch(() => ({ ok: false, clickedText: undefined }));
+      if (result.ok) {
+        return { clicked: true, detail: `scope=${name} byText pattern=${pattern} ${result.clickedText ?? ""}`.trim() };
       }
     }
   }
@@ -1627,7 +1670,7 @@ async function submitViaPublishDialog(
   request: PublishRequest,
   warnings: string[],
   capturedResponses: Array<{ url: string; status: number; payload: unknown }>,
-): Promise<{ success: boolean; message?: string }> {
+): Promise<{ success: boolean; message?: string; coverApplied?: boolean; coverUrl?: string }> {
   console.log(`[Submit] Opening publish dialog...`);
   const opened = await openPublishDialog(page);
   if (!opened) {
@@ -1648,7 +1691,12 @@ async function submitViaPublishDialog(
   await trySetPublishDialogOriginalFlag(dialog, request.article.original).catch(() => undefined);
   await tryFillPublishDialogCategory(page, dialog, request.article.category, warnings).catch(() => undefined);
   await tryFillPublishDialogTags(page, dialog, request.article.tags, warnings);
-  await tryUploadPublishDialogCover(page, dialog, request.coverPath, warnings);
+  const coverPath = request.coverPath ?? request.article.coverPath;
+  const coverResult = await tryUploadPublishDialogCover(page, dialog, coverPath, warnings);
+  if (coverResult.applied && coverResult.coverUrl) {
+    warnings.push(`封面已上传：${coverResult.coverUrl}`);
+  }
+  await dismissBlockingModals(page);
 
   // 先挂 waitForResponse 再点击，避免响应过快导致漏捕。
   const responseStartIndex = capturedResponses.length;
@@ -1691,12 +1739,6 @@ async function submitViaPublishDialog(
     ? true
     : (await Promise.all(requestedTags.map((t) => isTagSelected(dialog, t)))).every(Boolean);
 
-  // 封面预览在不同版本 DOM 差异较大，可能存在假阴性；因此不把它作为失败条件，但会输出 warning。
-  const coverVisible = request.coverPath ? await isCoverPreviewVisible(dialog) : true;
-  if (request.coverPath && !coverVisible) {
-    warnings.push("已执行封面上传，但未在发布弹窗中检测到封面预览；如果草稿箱没有封面，请手动补充或重试。");
-  }
-
   // 仅凭“标签 chip 可见”可能会出现误判（例如其实没点到保存按钮），因此要求至少观察到一次保存/草稿相关网络活动。
   const persistedFallbackOk = Boolean(tagsOk && sawDraftNetwork);
   if (persistedFallbackOk && !responseMatched && !message && !info.articleId && !urlHasArticleId) {
@@ -1705,11 +1747,121 @@ async function submitViaPublishDialog(
 
   const success = responseMatched || Boolean(message) || Boolean(info.articleId) || urlHasArticleId || persistedFallbackOk;
 
+  if (!success) {
+    warnings.push("首次保存未确认成功，关闭遮挡弹窗后重试保存草稿。");
+    await dismissBlockingModals(page);
+    const retryClick = await clickDialogSubmit(page, dialog);
+    if (retryClick.clicked) {
+      warnings.push(`已重试点击“保存草稿”按钮：${retryClick.detail ?? "<unknown>"}`);
+      await page.waitForTimeout(1_200);
+      await page.waitForLoadState("networkidle", { timeout: Math.min(request.timeoutMs, 8_000) }).catch(() => undefined);
+      const retryMessage = await findDraftSuccessToastText(page);
+      const retryInfo = extractPublishInfo(capturedResponses);
+      const retryUrlHasArticleId = /[?&]articleId=\d+/.test(page.url());
+      const retryResponseMatched = capturedResponses.slice(responseStartIndex).some((r) => isDraftSaveUrl(r.url) && isDraftSavePayload(r.payload));
+      if (retryResponseMatched || retryMessage || retryInfo.articleId || retryUrlHasArticleId) {
+        return {
+          success: true,
+          message: retryMessage ?? "草稿保存成功",
+          coverApplied: coverResult.applied,
+          coverUrl: coverResult.coverUrl,
+        };
+      }
+    }
+  }
+
   if (success) {
     await closePublishDialogIfNeeded(page, dialog).catch(() => undefined);
   }
 
-  return { success, message };
+  return {
+    success,
+    message,
+    coverApplied: coverResult.applied,
+    coverUrl: coverResult.coverUrl,
+  };
+}
+
+async function openCsdnImageUploadDialog(page: Page): Promise<boolean> {
+  if (await page.locator("div.uploadPicture input[type='file']").count()) {
+    return true;
+  }
+
+  const iconButtons = page
+    .locator(".navigation-bar__inner--edit-pagedownButtons .navigation-bar__button.button")
+    .filter({ hasNotText: /列表|代码块|格式|插入|历史|更多/ });
+
+  const count = await iconButtons.count();
+  for (let i = 0; i < count; i++) {
+    await iconButtons.nth(i).click({ timeout: 2_000 }).catch(() => undefined);
+    await page.waitForTimeout(600);
+    if (await page.locator("div.uploadPicture input[type='file']").count()) {
+      return true;
+    }
+    await page.keyboard.press("Escape").catch(() => undefined);
+    await page.waitForTimeout(200);
+  }
+
+  return false;
+}
+
+function imageMimeType(filePath: string): string {
+  const ext = path.extname(filePath).toLowerCase();
+  if (ext === ".jpg" || ext === ".jpeg") return "image/jpeg";
+  if (ext === ".gif") return "image/gif";
+  if (ext === ".webp") return "image/webp";
+  if (ext === ".bmp") return "image/bmp";
+  return "image/png";
+}
+
+async function uploadImageViaEditorDrop(page: Page, filePath: string): Promise<void> {
+  const buffer = fs.readFileSync(filePath);
+  const mimeType = imageMimeType(filePath);
+  const fileName = path.basename(filePath);
+
+  await page.locator("pre.editor__inner").first().click({ timeout: 2_000 }).catch(() => undefined);
+  await page.evaluate(({ b64, name, mimeType: mime }) => {
+    const editorEl = document.querySelector("pre.editor__inner") as HTMLElement | null;
+    if (!editorEl) return;
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const file = new File([bytes], name, { type: mime });
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    for (const type of ["dragenter", "dragover", "drop"] as const) {
+      editorEl.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt }));
+    }
+  }, { b64: buffer.toString("base64"), name: fileName, mimeType });
+}
+
+async function waitForUploadedImageUrl(
+  page: Page,
+  markdownEditor: Locator,
+  latestUrl: { value: string | null },
+  maxAttempts = 120,
+): Promise<string> {
+  for (let i = 0; i < maxAttempts; i++) {
+    if (latestUrl.value) {
+      return latestUrl.value;
+    }
+
+    try {
+      if (await markdownEditor.count() > 0) {
+        const editorText = await markdownEditor.innerText();
+        const urlMatch = editorText.match(/https?:\/\/(?:i-blog|img-blog)\.csdnimg\.cn\/direct\/[a-zA-Z0-9_\.]+/);
+        if (urlMatch) {
+          return urlMatch[0];
+        }
+      }
+    } catch {
+      // ignore transient editor read errors
+    }
+
+    await page.waitForTimeout(500);
+  }
+
+  return "";
 }
 
 async function uploadImagesInMarkdown(
@@ -1735,90 +1887,53 @@ async function uploadImagesInMarkdown(
 
   console.log(`[CSDN Image Upload] Found ${localImages.length} local images to process.`);
 
-  // create debug output directory (relative to skill root: parent of scripts)
-  const debugDir = path.resolve(process.cwd(), "..", "debug-output");
-  try {
-    fs.mkdirSync(debugDir, { recursive: true });
-  } catch {
-    // ignore
-  }
+  const markdownEditor = page.locator("pre.editor__inner[contenteditable='true'], .vditor-reset, #vditor").first();
 
-  const imageBtn = page.locator([
-    "button[title='图片']",
-    "button[aria-label='图片']",
-    "button:has-text('图片')",
-    ".toolbar-item:has-text('图片')",
-    ".navigation-bar__button:has-text('图片')",
-    ".button-bar__button--image"
-  ].join(", ")).first();
-  
-  // 必须点击一次图片按钮以触发 CSDN 编辑器初始化上传组件
-  // We will click the image button inside the loop for each image
-
-  // 全局捕获上传成功的 URL
-  let latestUrl: string | null = null;
-  const onResponse = async (resp: any) => {
+  const latestUrl = { value: null as string | null };
+  const onResponse = async (resp: Response) => {
     try {
       const url = resp.url();
       const urlLower = url.toLowerCase();
-      
-      // 1. 记录所有相关的“有趣”响应，用于离线分析
-      const isRelated = urlLower.includes("csdn.net") || urlLower.includes("csdnimg.cn") || urlLower.includes("myhuaweicloud.com");
-      if (isRelated && (urlLower.includes("upload") || urlLower.includes("direct") || urlLower.includes("image") || urlLower.includes("sign"))) {
-        const text = await resp.text().catch(() => null);
-        try {
-          const ts = Date.now();
-          const filePath = path.join(debugDir, `resp-${ts}-v.txt`);
-          fs.writeFileSync(filePath, `URL: ${url}\nSTATUS: ${resp.status()}\n\n${text ?? "<no body>"}`, "utf-8");
-        } catch {
-          // ignore
-        }
-      }
 
-      // 2. 忽略包含 "img-home" 的占位符 URL (CSDN 用于进度展示或临时引用)
       if (urlLower.includes("img-home.csdnimg.cn")) {
         return;
       }
 
-      // 3. 从上传响应体中提取 (Native 方式)
+      const isRelated = urlLower.includes("csdn.net") || urlLower.includes("csdnimg.cn") || urlLower.includes("myhuaweicloud.com");
       const isUpload = urlLower.includes("upload") || urlLower.includes("direct") || urlLower.includes("kyc") || urlLower.includes("myhuaweicloud.com");
-      
+
       if (isUpload && isRelated && resp.status() >= 200 && resp.status() < 300) {
         const text = await resp.text().catch(() => "");
-        
-        // Try parsing JSON first for structured URLs
-        try {
-          const json = JSON.parse(text);
-          let remoteUrl = json?.data?.imageUrl || json?.imageUrl || json?.data?.url || json?.url || json?.data?.direct_url;
-          
-          if (!remoteUrl && typeof json?.data === "string" && json.data.startsWith("http")) {
-            remoteUrl = json.data;
-          }
 
-          if (remoteUrl && remoteUrl.includes("csdnimg.cn") && !remoteUrl.includes("img-home.csdnimg.cn")) {
-            console.log(`[CSDN] Captured URL from JSON: ${remoteUrl}`);
-            latestUrl = remoteUrl;
+        try {
+          const json = JSON.parse(text) as Record<string, unknown>;
+          const data = json?.data as Record<string, unknown> | string | undefined;
+          let remoteUrl =
+            (data && typeof data === "object" ? (data.imageUrl || data.url || data.direct_url) : undefined)
+            || json?.imageUrl
+            || json?.url
+            || (typeof data === "string" && data.startsWith("http") ? data : undefined);
+
+          if (typeof remoteUrl === "string" && remoteUrl.includes("csdnimg.cn") && !remoteUrl.includes("img-home.csdnimg.cn")) {
+            latestUrl.value = remoteUrl;
             return;
           }
-        } catch (e) {
-          // Not JSON or parse error, fallback to regex on text
+        } catch {
+          // Not JSON, fallback to regex below.
         }
 
-        // Regex search for native i-blog URLs or direct csdnimg URLs
         const nativeMatch = text.match(/https?:\/\/i-blog\.csdnimg\.cn\/direct\/[a-zA-Z0-9_\.]+/);
         if (nativeMatch) {
-          console.log(`[CSDN] Captured Native URL via Regex: ${nativeMatch[0]}`);
-          latestUrl = nativeMatch[0];
+          latestUrl.value = nativeMatch[0];
           return;
         }
 
         const fallbackMatch = text.match(/https?:\/\/[a-z0-9-]+\.csdnimg\.cn\/[^\s"'}@\)]+/);
         if (fallbackMatch && !fallbackMatch[0].includes("img-home.csdnimg.cn")) {
-          console.log(`[CSDN] Captured Fallback URL via Regex: ${fallbackMatch[0]}`);
-          latestUrl = fallbackMatch[0];
+          latestUrl.value = fallbackMatch[0];
         }
       }
-    } catch (e) {
+    } catch {
       // Ignore parsing errors
     }
   };
@@ -1832,75 +1947,49 @@ async function uploadImagesInMarkdown(
 
       if (!fs.existsSync(resolvedPath)) {
         console.warn(`[CSDN Image Upload] File not found: ${resolvedPath}`);
+        warnings.push(`CSDN: 图片文件不存在: ${item.localPath}`);
         continue;
       }
 
       console.log(`[CSDN Image Upload] Processing: ${item.localPath}`);
-      
-      const markdownEditor = page.locator("pre.editor__inner[contenteditable='true'], .vditor-reset, #vditor").first();
-      
-      let remoteUrl = "";
-      latestUrl = null; // Clear for next image
+      latestUrl.value = null;
+
       try {
-        // Ensure the image dialog is open (click it every time as CSDN closes it after upload)
-        if (await imageBtn.count() > 0) {
-          console.log(`[CSDN Image Upload] Opening upload dialog for ${item.localPath}...`);
-          await imageBtn.click().catch(() => {});
-          await page.waitForTimeout(1000);
+        const dialogOpened = await openCsdnImageUploadDialog(page);
+        if (dialogOpened) {
+          const fileInput = page.locator("div.uploadPicture input[type='file']").first();
+          await fileInput.setInputFiles(resolvedPath);
+          console.log(`[CSDN Image Upload] File set via upload dialog for ${item.localPath}...`);
+        } else {
+          console.log(`[CSDN Image Upload] Upload dialog unavailable, trying drag-drop for ${item.localPath}...`);
+          await uploadImageViaEditorDrop(page, resolvedPath);
         }
-
-        // 1. Locate the hidden file input
-        const fileInput = page.locator('div.uploadPicture input[type="file"]').first();
-        await fileInput.waitFor({ state: "attached", timeout: 10000 });
-        
-        // 2. Set the file (triggers upload)
-        await fileInput.setInputFiles(resolvedPath);
-        console.log(`[CSDN Image Upload] File set, waiting for CSDN response...`);
-      } catch (err: any) {
-        console.warn(`[CSDN Image Upload] UI Trigger failed for ${item.localPath}: ${err.message}`);
-      }
-      
-      // Wait for URL (Interceptor or Editor UI)
-      for (let i = 0; i < 120; i++) { // 60 seconds max
-        // 1. Check network interceptor
-        if (latestUrl) {
-          remoteUrl = latestUrl;
-          console.log(`[CSDN Image Upload] URL captured via Interceptor: ${remoteUrl}`);
-          break;
-        }
-
-        // 2. Check editor text for auto-inserted link
+      } catch (err) {
+        console.warn(`[CSDN Image Upload] Dialog upload failed for ${item.localPath}: ${(err as Error).message}`);
         try {
-          if (await markdownEditor.count() > 0) {
-            const editorText = await markdownEditor.innerText();
-            const urlMatch = editorText.match(/https?:\/\/(?:i-blog|img-blog)\.csdnimg\.cn\/direct\/[a-zA-Z0-9_\.]+/);
-            if (urlMatch) {
-              remoteUrl = urlMatch[0];
-              console.log(`[CSDN Image Upload] URL captured via Editor UI: ${remoteUrl}`);
-              break;
-            }
-          }
-        } catch (err) { /* ignore */ }
-
-        await page.waitForTimeout(500);
+          await uploadImageViaEditorDrop(page, resolvedPath);
+          console.log(`[CSDN Image Upload] Drag-drop fallback triggered for ${item.localPath}`);
+        } catch (dropErr) {
+          console.warn(`[CSDN Image Upload] Drag-drop failed for ${item.localPath}: ${(dropErr as Error).message}`);
+        }
       }
+
+      const remoteUrl = await waitForUploadedImageUrl(page, markdownEditor, latestUrl);
 
       if (remoteUrl) {
         console.log(`[CSDN Image Upload] SUCCESS: ${item.localPath} -> ${remoteUrl}`);
-        const replacement = `![在这里插入图片描述](${remoteUrl}#pic_center)`;
+        const replacement = `![${item.alt || "在这里插入图片描述"}](${remoteUrl}#pic_center)`;
         finalMarkdown = finalMarkdown.split(item.full).join(replacement);
-        
-        // Success: Clean up editor for next image
+
+        await page.keyboard.press("Escape").catch(() => undefined);
         if (await markdownEditor.count() > 0) {
-          await markdownEditor.click().catch(() => {});
-          await page.keyboard.press("Control+A").catch(() => {});
-          await page.keyboard.press("Backspace").catch(() => {});
+          await markdownEditor.click().catch(() => undefined);
+          await page.keyboard.press("Control+A").catch(() => undefined);
+          await page.keyboard.press("Backspace").catch(() => undefined);
           await page.waitForTimeout(500);
         }
       } else {
         console.warn(`[CSDN Image Upload] Timeout for ${item.localPath}`);
-        const debugDir = path.join(process.cwd(), 'debug-output');
-        await page.screenshot({ path: path.join(debugDir, `upload-timeout-${Date.now()}-${path.basename(item.localPath)}.png`) }).catch(() => {});
         warnings.push(`CSDN: 图片上传超时: ${item.localPath}`);
       }
     }
@@ -1976,6 +2065,8 @@ export async function publishArticle(request: PublishRequest): Promise<PublishRe
       tags: request.article.tags,
       original: request.article.original,
       coverPath: request.article.coverPath,
+      coverApplied: submitResult.coverApplied,
+      coverUrl: submitResult.coverUrl,
       finalUrl,
       articleId: info.articleId,
       articleUrl: info.articleUrl,

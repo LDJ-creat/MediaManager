@@ -27,6 +27,8 @@ function toMarkdown(result: Awaited<ReturnType<typeof publishArticle>>): string 
     `- Category: ${result.category ?? "-"}`,
     `- Tags: ${result.tags.join(", ") || "-"}`,
     `- Original: ${result.original === undefined ? "-" : String(result.original)}`,
+    `- Cover Applied: ${result.coverApplied === undefined ? "-" : String(result.coverApplied)}`,
+    `- Cover URL: ${result.coverUrl ?? "-"}`,
     "",
     "## Warnings",
     ...(result.warnings.length > 0 ? result.warnings.map((item: string) => `- ${item}`) : ["- none"]),
@@ -56,7 +58,7 @@ async function main(): Promise<void> {
     authFile,
     headless: options.headless,
     timeoutMs: options.timeoutMs,
-    coverPath: options.coverPath,
+    coverPath: options.coverPath ?? article.coverPath,
   });
 
   const outputDir = path.resolve(process.cwd(), options.outputDir);
