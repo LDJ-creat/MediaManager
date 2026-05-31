@@ -27,6 +27,8 @@ export function ensureWorkspaceGitignore(workspace: string): void {
 }
 
 export function getGlobalConfigDir(): string {
+  const override = process.env.MEDIA_MANAGER_CONFIG_DIR?.trim();
+  if (override) return path.resolve(override);
   return path.join(os.homedir(), ".media-manager");
 }
 
