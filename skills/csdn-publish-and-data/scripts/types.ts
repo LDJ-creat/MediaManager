@@ -198,6 +198,11 @@ export interface PublishRequest {
   coverPath?: string;
 }
 
+export interface CoverUploadResult {
+  applied: boolean;
+  coverUrl?: string;
+}
+
 export interface PublishResult {
   generatedAt: string;
   mode: PostMode;
@@ -218,4 +223,6 @@ export interface PublishResult {
     payload: unknown;
   }>;
   coverPath?: string;
+  coverApplied?: boolean;
+  coverUrl?: string;
 }
