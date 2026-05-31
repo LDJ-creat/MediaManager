@@ -1,23 +1,25 @@
-import { spawn, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
 import { fileURLToPath } from "node:url";
 import {
   ensureWorkspaceLayout,
-  findMonorepoRoot,
   getDefaultWorkspacePath,
-  readGlobalConfig,
   resolveWorkspace,
   setupWorkspace,
 } from "@dsmlll/media-manager-core";
 import { resolveSkillScript } from "@dsmlll/media-manager-runtime";
 import {
   isMediaManagerSkillInstalled,
+  printSkillsInstallFailureHint,
   runSkillsAdd,
   runSkillsUninstall,
   runSkillsUpdate,
 } from "./skills.js";
+import { getConfiguredWorkspace, getPlatformAuthStatuses, printSetupStatusSummary } from "./setup-status.js";
+import { runNewsSourcesEdit } from "./news-sources.js";
+import { spawnCommand, spawnCommandSync } from "./spawn.js";
 import { formatDoctorLine, printBanner, printStep, ui } from "./ui.js";
 
 export interface ParsedArgs {
@@ -80,11 +82,10 @@ export function spawnInWorkspace(
     MEDIA_WORKSPACE: workspace,
     ...extraEnv,
   };
-  const result = spawnSync(command, args, {
+  const result = spawnCommandSync(command, args, {
     cwd: workspace,
     env,
     stdio: "inherit",
-    shell: process.platform === "win32",
   });
   return result.status ?? 1;
 }
@@ -138,18 +139,29 @@ export async function promptLine(message: string): Promise<string> {
 
 export async function promptSetupInteractive(): Promise<string> {
   printBanner();
+  const existing = getConfiguredWorkspace();
+  printSetupStatusSummary();
+
   printStep(ui.cyan("▸"), "工作区", "存放文章、配图、日报、复盘报告和 guidance");
-  const defaultPath = getDefaultWorkspacePath();
-  console.log(`\n  ${ui.dim("默认路径")}\n  ${ui.blue(defaultPath)}\n`);
-  console.log(ui.dim("直接回车使用默认路径，或输入自定义路径后回车：\n"));
+
+  if (existing) {
+    console.log(`\n  ${ui.dim("当前路径")}\n  ${ui.blue(existing)}\n`);
+    console.log(ui.dim("直接回车保持当前路径，或输入新路径后回车：\n"));
+  } else {
+    const defaultPath = getDefaultWorkspacePath();
+    console.log(`\n  ${ui.dim("默认路径")}\n  ${ui.blue(defaultPath)}\n`);
+    console.log(ui.dim("直接回车使用默认路径，或输入自定义路径后回车：\n"));
+  }
 
   if (!process.stdin.isTTY) {
-    console.log(`${ui.dim("非交互环境，使用默认路径:")} ${defaultPath}`);
-    return defaultPath;
+    const fallback = existing ?? getDefaultWorkspacePath();
+    console.log(`${ui.dim("非交互环境，使用路径:")} ${fallback}`);
+    return fallback;
   }
 
   const answer = await promptLine(`${ui.cyan(">")} `);
-  return answer || defaultPath;
+  if (answer) return answer;
+  return existing ?? getDefaultWorkspacePath();
 }
 
 const PLATFORM_AUTH_SETUP = [
@@ -162,16 +174,33 @@ const PLATFORM_AUTH_SETUP = [
 export async function promptPlatformAuthSetup(workspace: string): Promise<void> {
   if (!process.stdin.isTTY || process.env.MEDIA_MANAGER_SKIP_AUTH_SETUP === "1") return;
 
+  const statuses = getPlatformAuthStatuses(workspace);
+
   console.log("");
   printStep(ui.magenta("▸"), "平台登录凭证", "可选；跳过后仍可用 media <platform> auth export 配置");
-  console.log(ui.dim("  每个平台：[Y] 立即配置 / [Enter] 跳过\n"));
+  for (const s of statuses) {
+    const mark = s.configured ? ui.green("✓ 已配置") : ui.dim("— 未配置");
+    console.log(`  ${ui.bold(s.label)}  ${mark}`);
+  }
+  console.log(ui.dim("\n  已配置平台默认跳过；未配置平台询问是否立即配置\n"));
 
   for (const { key, label, skill } of PLATFORM_AUTH_SETUP) {
-    const answer = await promptLine(`  ${ui.bold(label)} — 现在配置？${ui.dim("[y/N]")} `);
-    const yes = answer.toLowerCase() === "y" || answer.toLowerCase() === "yes";
-    if (!yes) {
-      console.log(`  ${ui.dim("跳过")} ${label}`);
-      continue;
+    const status = statuses.find((s) => s.key === key)!;
+    let yes: boolean;
+    if (status.configured) {
+      const answer = await promptLine(`  ${ui.bold(label)} — 重新配置？${ui.dim("[y/N]")} `);
+      yes = answer.toLowerCase() === "y" || answer.toLowerCase() === "yes";
+      if (!yes) {
+        console.log(`  ${ui.dim("保持")} ${label}`);
+        continue;
+      }
+    } else {
+      const answer = await promptLine(`  ${ui.bold(label)} — 现在配置？${ui.dim("[y/N]")} `);
+      yes = answer.toLowerCase() === "y" || answer.toLowerCase() === "yes";
+      if (!yes) {
+        console.log(`  ${ui.dim("跳过")} ${label}`);
+        continue;
+      }
     }
     console.log(`\n  ${ui.cyan("→")} 正在打开浏览器，请完成 ${label} 登录…\n`);
     const code = spawnTsxScript(
@@ -182,11 +211,20 @@ export async function promptPlatformAuthSetup(workspace: string): Promise<void> 
       platformAuthEnv(workspace, key)
     );
     if (code === 0) {
-      console.log(`  ${ui.green("✓")} ${label} 凭证已保存至 ${platformAuthEnv(workspace, key).MEDIA_AUTH_DIR}\n`);
+      console.log(`  ${ui.green("✓")} ${label} 凭证已保存至 ${ui.blue(platformAuthEnv(workspace, key).MEDIA_AUTH_DIR!)}\n`);
     } else {
-      console.log(`  ${ui.yellow("⚠")} ${label} 配置未完成，可稍后运行 ${AUTH_EXPORT_HINT[key]}\n`);
+      console.log(`  ${ui.yellow("⚠")} ${label} 配置未完成，可稍后运行 ${ui.blue(AUTH_EXPORT_HINT[key])}\n`);
     }
   }
+}
+
+async function shouldInstallSkills(flags: Record<string, string | boolean>): Promise<boolean> {
+  if (flags["skip-skills"] === true || process.env.MEDIA_MANAGER_SKIP_SKILLS === "1") return false;
+  if (flags["force-skills"] === true) return true;
+  if (!isMediaManagerSkillInstalled()) return true;
+  if (!process.stdin.isTTY) return false;
+  const answer = await promptLine(`  ${ui.dim("Skills 已安装")} — 是否更新？${ui.dim("[y/N]")} `);
+  return answer.toLowerCase() === "y" || answer.toLowerCase() === "yes";
 }
 
 export async function runSetup(flags: Record<string, string | boolean>): Promise<number> {
@@ -208,15 +246,23 @@ export async function runSetup(flags: Record<string, string | boolean>): Promise
     await promptPlatformAuthSetup(paths.workspace);
   }
 
-  if (flags["skip-skills"] !== true && process.env.MEDIA_MANAGER_SKIP_SKILLS !== "1") {
+  const installSkills = await shouldInstallSkills(flags);
+  if (installSkills) {
     console.log("");
     printStep(ui.cyan("▸"), "正在安装 Skills", ui.dim("首次可能需要几分钟"));
-    const skillCode = runSkillsAdd({ silent: true, target: typeof flags.target === "string" ? flags.target : "all" });
-    if (skillCode === 0) {
+    const skillResult = runSkillsAdd({ silent: true, target: typeof flags.target === "string" ? flags.target : "all" });
+    if (skillResult.code === 0) {
       printStep(ui.green("✓"), "Skills 安装成功", "");
     } else {
-      printStep(ui.yellow("⚠"), "Skills 安装未完成", "可稍后运行 media skill update");
+      printSkillsInstallFailureHint(skillResult.outputTail);
     }
+  } else if (
+    isMediaManagerSkillInstalled() &&
+    flags["skip-skills"] !== true &&
+    process.env.MEDIA_MANAGER_SKIP_SKILLS !== "1"
+  ) {
+    console.log("");
+    printStep(ui.dim("▸"), "Skills", ui.dim("已安装，跳过（可用 media skill update 更新）"));
   }
 
   console.log("");
@@ -249,42 +295,8 @@ export function runWorkspaceSet(flags: Record<string, string | boolean>, positio
   return 0;
 }
 
-export function runInit(flags: Record<string, string | boolean>, positional: string[]): number {
-  const target = typeof flags.workspace === "string" ? flags.workspace : positional[0];
-  if (target) {
-    setupWorkspace(target);
-  } else {
-    const global = readGlobalConfig();
-    if (!global) {
-      console.error("No workspace configured. Run `media setup --interactive`.");
-      return 1;
-    }
-    ensureWorkspaceLayout(global.workspace);
-  }
-
-  if (flags["with-cursor"]) {
-    const ws = target ? path.resolve(target) : readGlobalConfig()!.workspace;
-    writeCursorCommands(ws);
-    console.log(`Cursor commands written to ${path.join(ws, ".cursor", "commands")}`);
-  }
-  return 0;
-}
-
-function writeCursorCommands(workspace: string) {
-  const commandsDir = path.join(workspace, ".cursor", "commands");
-  fs.mkdirSync(commandsDir, { recursive: true });
-  const repoRoot = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..", "..");
-  const workflowDir = path.join(repoRoot, "skills", "media-manager", "references", "workflows");
-  for (const name of ["daily-digest.md", "write-and-publish.md", "analyze-operation.md"]) {
-    const src = path.join(workflowDir, name);
-    if (fs.existsSync(src)) {
-      fs.copyFileSync(src, path.join(commandsDir, name));
-    }
-  }
-}
-
 function commandOk(command: string, args: string[]): boolean {
-  return spawnSync(command, args, { stdio: "ignore", shell: true }).status === 0;
+  return spawnCommandSync(command, args, { stdio: "ignore" }).status === 0;
 }
 
 function platformAuthEnv(workspace: string, platformKey: string): Record<string, string> {
@@ -357,11 +369,10 @@ function spawnTsxScriptAsync(
     ...extraEnv,
   };
   return new Promise((resolve) => {
-    const child = spawn("npx", ["tsx", scriptPath, ...args], {
+    const child = spawnCommand("npx", ["tsx", scriptPath, ...args], {
       cwd: workspace,
       env,
       stdio: "inherit",
-      shell: true,
     });
     child.on("close", (code) => resolve(code ?? 1));
   });
@@ -543,20 +554,20 @@ export async function runAnalyticsFetchAll(
 }
 
 export function runSkillInstall(flags: Record<string, string | boolean>): number {
-  const code = runSkillsAdd(flags);
-  if (code === 0) {
+  const result = runSkillsAdd(flags);
+  if (result.code === 0) {
     console.log(`\n${ui.green("✓")} Skills 安装成功`);
   }
-  return code;
+  return result.code;
 }
 
 export function runSkillUpdate(flags: Record<string, string | boolean>): number {
   console.log(ui.cyan("正在从远程仓库更新 Skills…"));
-  const code = runSkillsUpdate(flags);
-  if (code === 0) {
+  const result = runSkillsUpdate(flags);
+  if (result.code === 0) {
     console.log(`\n${ui.green("✓")} Skills 更新成功`);
   }
-  return code;
+  return result.code;
 }
 
 export function runSkillUninstall(flags: Record<string, string | boolean>): number {
@@ -575,7 +586,6 @@ export async function dispatch(argv: string[]): Promise<number> {
   if (c0 === "setup") return runSetup({ ...flags, interactive: flags.interactive ?? true });
   if (c0 === "workspace" && c1 === "show") return runWorkspaceShow(flags);
   if (c0 === "workspace" && c1 === "set") return runWorkspaceSet(flags, positional);
-  if (c0 === "init") return runInit(flags, positional);
   if (c0 === "doctor") return runDoctor();
   if (c0 === "skill" && c1 === "install") return runSkillInstall(flags);
   if (c0 === "skill" && c1 === "update") return runSkillUpdate(flags);
@@ -598,6 +608,7 @@ export async function dispatch(argv: string[]): Promise<number> {
 
   if (c0 === "news" && c1 === "fetch") return runNewsFetch(workspace, flags);
   if (c0 === "news" && c1 === "mark-seen") return runNewsMarkSeen(workspace, flags);
+  if (c0 === "news" && c1 === "sources" && c2 === "edit") return runNewsSourcesEdit(workspace);
 
   if (c0 === "wechat" && c1 === "post") {
     return spawnBunScript(workspace, "post-to-wechat", "scripts/wechat-api.ts", positional);
@@ -683,17 +694,17 @@ function printHelp() {
   console.log(`MediaManager CLI (media) v${getCliVersion()}
 
 Setup:
-  media setup [--interactive] [--workspace <path>] [--skip-auth] [--skip-skills]
+  media setup [--interactive] [--workspace <path>] [--skip-auth] [--skip-skills] [--force-skills]
   media workspace show|set <path>
-  media init [path] [--with-cursor]
   media doctor
-  media skill install [--target cursor|claude|all]
-  media skill update [--target cursor|claude|all]
+  media skill install [--target cursor|claude|codex|all]  (default: all)
+  media skill update [--target cursor|claude|codex|all]  (default: all)
   media skill uninstall
 
 News:
   media news fetch [--hours N] [--preview] [--skip-dedup]
   media news mark-seen [--date YYYY-MM-DD] [--status]
+  media news sources edit          编辑工作区 RSS 源（首次自动复制默认配置）
 
 Platforms:
   media wechat post ...
