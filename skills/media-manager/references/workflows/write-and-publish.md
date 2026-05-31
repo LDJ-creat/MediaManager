@@ -14,26 +14,34 @@
 
 ## 门禁
 
-选题、提纲、初稿、发布各阶段须用户确认（见 `article-writer` skill）。
+- **平台**：用户未明确目标平台时，**必须先询问**（选择器或多选 / 自然语言），收到明确选择并完成确认前，**不得**进入 Step 1，**不得**执行 `media * post*`。详见 Step 0 与 Step 5。
+- 选题、提纲、初稿各阶段须用户确认（见 `article-writer` skill）。
+- 发布前须再次核对 Step 0 记录的平台组合；用户变更意图或未确认时，按 [orchestration.md § 平台选择协议](../orchestration.md#平台选择协议) 重新询问。
 
 ## 步骤
 
-### 0. 平台确认（须用户确认）
+### 0. 确定目标平台（须用户确认）
+
+本步决定内容族（`longform` / `xhs` / `full-stack`），影响后续选题 guidance、写作分支、配图 skill 与发布命令。**是全流程的前置条件，不可跳过或默认全平台。**
+
+用户**已明确**目标平台（如「写一篇文章发 CSDN 和掘金」「只做小红书笔记」）→ 映射内容族后**复述确认**，用户同意则进入 Step 1。
 
 用户**未明确**目标平台时，按 [orchestration.md § 平台选择协议](../orchestration.md#平台选择协议) 执行：
 
-- **有选择器**（如 Cursor `AskQuestion`）：多选「微信公众号 / CSDN / 掘金 / 小红书 / 全部」
-- **无选择器**：自然语言列出选项并请用户回复（可多选）
+- **有选择器**（如 Cursor `AskQuestion`）：多选「微信公众号 / CSDN / 掘金 / 小红书 / 全部」（`allow_multiple: true`）
+- **无选择器**：自然语言列出下表选项并请用户回复（可多选），说明 longform 为草稿箱、小红书为正式发布
 
-用户**已明确**平台则跳过本步。
+**收到明确选择并完成复述确认前**，不得进入 Step 1，不得开始选题、写作、配图或 `media * post*`。
 
-| 选项 | 内容族 | 说明 |
-|------|--------|------|
-| 微信 / CSDN / 掘金 | `longform` | 共用一篇 `article.md` |
-| 小红书 | `xhs` | 独立 `note.md` + 信息图 |
-| 全部 | `full-stack` | 默认同题，双产出 |
+| 选项 | 内容族 | 成稿 | 说明 |
+|------|--------|------|------|
+| 微信公众号 | longform | `article.md` | 草稿箱（返回 media_id 与编辑链接） |
+| CSDN | longform | `article.md` | 草稿（返回编辑链接） |
+| 掘金 | longform | `article.md` | 草稿（返回编辑链接） |
+| 小红书 | `xhs` | `note.md` + 信息图 | **正式发布**（非草稿；草稿为本地保存，无法跨设备共享） |
+| 全部 | `full-stack` | `article.md` + `note.md` | 默认同题，双产出；longform 与 xhs 分支并行 |
 
-记录选择并向用户复述确认后再进入 Step 1。**未确认前不得开始选题。**
+记录选择并向用户复述确认后再进入 Step 1。
 
 ### 1. 选题
 
@@ -75,9 +83,15 @@
 
 ### 5. 发布（CLI）
 
-**优先 Subagent** 按平台加载 `guidance/publishing/platform/{platform}.md` 并构造 CLI 参数；多平台**可并行**委派。主编排汇总各平台 CLI 结果与链接。
+**发布前平台确认**（与 Step 0 一致，不可省略）：
 
-发布前加载 `guidance/publishing/platform/{platform}.md`（longform 平台）。
+1. 核对 Step 0 已记录且用户已确认的目标平台
+2. 若用户中途变更意图、或 Step 0 从未完成平台确认 → 按 [orchestration.md § 平台选择协议](../orchestration.md#平台选择协议) 重新询问
+3. **收到明确选择前**不得执行 `media * post*`
+
+**优先 Subagent** 按平台加载 `guidance/publishing/platform/{platform}.md` 并构造 CLI 参数；多平台**可并行**委派。主编排汇总各平台 CLI 结果与链接。**不要**改写正文；metadata 按 guidance 构造 CLI 参数。
+
+仅发布 Step 0 已确认的平台；勿默认全平台或擅自增删目标。
 
 | 平台 | 命令 | 发布方式 |
 |------|------|----------|
