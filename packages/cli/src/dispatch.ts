@@ -31,8 +31,8 @@ import { promptLine } from "./prompt.js";
 import { getConfiguredWorkspace, getPlatformAuthStatuses, printSetupStatusSummary } from "./setup-status.js";
 import { promptApiSecretsSetup, promptImageGenSetup, promptWechatApiSetup } from "./setup-secrets.js";
 import { runNewsSourcesEdit } from "./news-sources.js";
-import { spawnCommand, spawnCommandSync } from "./spawn.js";
-import { formatDoctorLine, printBanner, printStep, ui } from "./ui.js";
+import { formatSpawnError, spawnCommand, spawnCommandSync } from "./spawn.js";
+import { formatDoctorLine, printBanner, printLabelRow, printStep, ui } from "./ui.js";
 
 export interface ParsedArgs {
   command: string[];
@@ -114,6 +114,9 @@ export function spawnInWorkspace(
     env,
     stdio: "inherit",
   });
+  if (result.error) {
+    console.error(formatSpawnError(command, args, result.error));
+  }
   return result.status ?? 1;
 }
 
@@ -197,7 +200,7 @@ export async function promptPlatformAuthSetup(workspace: string): Promise<void> 
   printStep(ui.magenta("▸"), "平台登录凭证", "可选；跳过后仍可用 media <platform> auth export 配置");
   for (const s of statuses) {
     const mark = s.configured ? ui.green("✓ 已配置") : ui.dim("— 未配置");
-    console.log(`  ${ui.bold(s.label)}  ${mark}`);
+    printLabelRow(s.label, mark);
   }
   console.log(ui.dim("\n  已配置平台默认跳过；未配置平台询问是否立即配置\n"));
 
@@ -386,12 +389,23 @@ function spawnTsxScriptAsync(
   }
   const env = buildWorkspaceSpawnEnv(workspace, extraEnv, []);
   return new Promise((resolve) => {
-    const child = spawnCommand("npx", ["tsx", scriptPath, ...args], {
+    const childArgs = ["tsx", scriptPath, ...args];
+    let settled = false;
+    const finish = (code: number) => {
+      if (settled) return;
+      settled = true;
+      resolve(code);
+    };
+    const child = spawnCommand("npx", childArgs, {
       cwd: workspace,
       env,
       stdio: "inherit",
     });
-    child.on("close", (code) => resolve(code ?? 1));
+    child.on("error", (error) => {
+      console.error(formatSpawnError("npx", childArgs, error));
+      finish(1);
+    });
+    child.on("close", (code) => finish(code ?? 1));
   });
 }
 
@@ -777,7 +791,7 @@ Setup:
   media config show [--json]
   media skill install [--target cursor|claude|codex|all]  (default: all)
   media skill update [--target cursor|claude|codex|all]  (default: all)
-  media skill uninstall
+  media skill uninstall [--target cursor|claude|codex|all]  (default: all)
 
 News:
   media news fetch [--hours N] [--preview] [--skip-dedup]
