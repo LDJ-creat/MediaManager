@@ -4,15 +4,16 @@
 
 - Node.js >= 20
 - 已安装 `@dsmlll/media-manager-cli`（`npm install -g @dsmlll/media-manager-cli`）
-- 已配置工作区（安装 CLI 时交互 setup，或 `media setup --interactive`）
+- 已配置工作区（`media setup`）
 
-## Skill
+## Skills
+
+`media setup` 会自动安装 Skills。也可手动：
 
 ```bash
-npx skills add LDJ-creat/MediaManager --skill media-manager -g -a cursor -a claude-code -y
+media skill install
+media skill update
 ```
-
-或 `media skill install --minimal`
 
 ## 其他运行时
 

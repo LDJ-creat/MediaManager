@@ -8,11 +8,11 @@
 
 ```bash
 npm install -g @dsmlll/media-manager-cli
-npx skills add LDJ-creat/MediaManager --skill media-manager -g -a cursor -a claude-code -y
+media setup
 media doctor
 ```
 
-安装时交互设置工作区（默认 `Documents/MediaManager-Workspace`）。详见 [docs/install.md](docs/install.md)。
+安装时交互设置工作区（默认 `Documents/MediaManager-Workspace`），并自动安装 Skills。详见 [docs/install.md](docs/install.md)。
 
 ### Mode A（开发者）
 
@@ -34,7 +34,9 @@ Repo 根目录即工作区（`.media-manager/repo-marker.json`）。
 | `media doctor` | 环境自检 |
 | `media news fetch` | 抓取 RSS 资讯 |
 | `media analytics fetch --all` | 抓取各平台运营数据 |
-| `media skill install` | 安装 Skill 到 Cursor / Claude |
+| `media skill install` | 安装 Skills 到 Cursor / Claude 等 |
+| `media skill update` | 更新 Skills |
+| `media skill uninstall` | 卸载 Skills |
 
 完整契约见 [docs/cli-contract.md](docs/cli-contract.md) 与 [skills/media-manager/references/cli-contract.md](skills/media-manager/references/cli-contract.md)。
 
@@ -77,16 +79,15 @@ Repo 根目录即工作区（`.media-manager/repo-marker.json`）。
 
 详见 [docs/workspace.md](docs/workspace.md)。
 
-## 安装 Skill 到编辑器
-
-**推荐：**
+## Skills 管理
 
 ```bash
-media skill install              # 完整安装
-media skill install --minimal    # 仅 media-manager 总控
+media skill install
+media skill update
+media skill uninstall
 ```
 
-**Deprecated（开发兜底）：** `sync-skills.ps1` / `sync-skills.sh` 仍可用于 monorepo 本地同步，新用户请优先 `media skill install`。
+**Deprecated（开发兜底）：** `sync-skills.ps1` / `sync-skills.sh` 仍可用于 monorepo 本地同步。
 
 ## 配置
 
