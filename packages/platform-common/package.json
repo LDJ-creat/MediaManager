@@ -1,6 +1,6 @@
 {
   "name": "@dsmlll/media-manager-platform-common",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

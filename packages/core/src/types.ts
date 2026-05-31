@@ -1,7 +1,7 @@
 export const GLOBAL_CONFIG_VERSION = 1;
 export const WORKSPACE_CONFIG_VERSION = 1;
 export const WORKSPACE_LAYOUT = "v1";
-export const CLI_VERSION = "0.1.6";
+export const CLI_VERSION = "0.1.7";
 
 export interface GlobalConfig {
   version: number;
