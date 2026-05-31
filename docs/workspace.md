@@ -32,6 +32,6 @@ Clone 仓库后，**repo 根目录** 即 workspace（存在 `.media-manager/repo
 ## 解析优先级
 
 1. `--workspace` / `MEDIA_WORKSPACE`
-2. 向上查找 `.media-manager/config.json`
-3. repo marker（Mode A）
-4. `~/.media-manager/config.json`
+2. `~/.media-manager/config.json`（Mode B：`media setup` 写入的全局工作区）
+3. 从当前目录向上查找 `.media-manager/config.json`
+4. repo marker（Mode A：clone 仓库根目录）

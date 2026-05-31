@@ -127,16 +127,16 @@ export function resolveWorkspace(options: ResolveWorkspaceOptions = {}): string 
     return path.resolve(process.env.MEDIA_WORKSPACE);
   }
 
+  const globalConfig = readGlobalConfig();
+  if (globalConfig?.workspace) {
+    return path.resolve(globalConfig.workspace);
+  }
+
   const fromCwd = findWorkspaceConfigUpwards(cwd);
   if (fromCwd) return fromCwd;
 
   const repoRoot = findRepoRoot(cwd);
   if (repoRoot) return repoRoot;
-
-  const globalConfig = readGlobalConfig();
-  if (globalConfig?.workspace) {
-    return path.resolve(globalConfig.workspace);
-  }
 
   throw new Error(
     "MediaManager workspace is not configured. Run `media setup` or set MEDIA_WORKSPACE."

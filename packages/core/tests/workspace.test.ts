@@ -48,11 +48,25 @@ function testFindRepoRoot() {
   assert.equal(findRepoRoot(repo), path.resolve(repo));
 }
 
+function testGlobalConfigOverridesRepoCwd() {
+  const globalWs = path.join(tmpRoot, "global-ws");
+  setupWorkspace(globalWs);
+  const fakeRepoCwd = path.join(tmpRoot, "fake-repo-cwd");
+  fs.mkdirSync(path.join(fakeRepoCwd, ".media-manager"), { recursive: true });
+  fs.writeFileSync(
+    path.join(fakeRepoCwd, ".media-manager", "config.json"),
+    JSON.stringify({ version: 1, layout: "v1", createdAt: new Date().toISOString() })
+  );
+  fs.writeFileSync(path.join(fakeRepoCwd, ".media-manager", "repo-marker.json"), "{}");
+  assert.equal(resolveWorkspace({ cwd: fakeRepoCwd }), path.resolve(globalWs));
+}
+
 function run() {
   testResolveWorkspaceFromExplicit();
   testSetupWorkspace();
   testDefaultWorkspacePath();
   testFindRepoRoot();
+  testGlobalConfigOverridesRepoCwd();
   console.log("core tests passed");
 }
 
