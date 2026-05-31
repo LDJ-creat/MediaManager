@@ -5,7 +5,7 @@ description: MediaManager 总控 skill。当用户需要 RSS 选题写作、根�
 
 # MediaManager
 
-编排入口 skill。Deep-dive 见各子 skill（`article-writer`、`news-skill`、平台 skill 等）。
+编排入口 skill。Deep-dive 见各子 skill。内容族见 [platform-families.md](references/platform-families.md)。
 
 ## 强制规则
 
@@ -26,6 +26,16 @@ description: MediaManager 总控 skill。当用户需要 RSS 选题写作、根�
 
 > **daily-digest** 只负责抓 RSS、生成日报素材，不含完整写作流程。无素材写作须串联 **write-and-publish**（其中步骤 1 已说明无选题时的 RSS 路径）。
 
+## 子 Skill
+
+| Skill | 用途 |
+|-------|------|
+| article-writer | 长文 / 小红书笔记写作 |
+| article-illustrator | 长文配图 |
+| xhs-images | 小红书信息图轮播 |
+| news-skill | RSS 资讯 |
+| post-to-wechat / csdn / juejin / xiaohongshu-publish-and-data | 发布与数据 |
+
 ## 常用命令
 
 ```bash
@@ -43,6 +53,7 @@ media analytics fetch --all
 
 ## 参考
 
+- [内容族与 guidance 矩阵](references/platform-families.md)
 - [CLI 契约](references/cli-contract.md)
 - [运行前提](references/runtime-requirements.md)
 - [故障排查](references/troubleshooting.md)

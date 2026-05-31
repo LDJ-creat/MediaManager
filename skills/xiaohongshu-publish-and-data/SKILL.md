@@ -153,7 +153,7 @@ Data source: creator note manager API (`/api/galaxy/v2/creator/note/user/posted`
 - Troubleshooting: [references/troubleshooting/common-issues.md](./references/troubleshooting/common-issues.md)
 - Linux notes: [references/ubuntu/headless-setup.md](./references/ubuntu/headless-setup.md)
 
-Content writing rules: [../guidance/writing/platform/xiaohongshu.md](../guidance/writing/platform/xiaohongshu.md)
+Content writing rules: `$WORKSPACE/guidance/writing/platform/xiaohongshu.md`（工作区 seed；配图见 `xhs-images` skill）
 
 ## Safety And Boundaries
 
