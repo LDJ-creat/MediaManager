@@ -8,7 +8,9 @@ media setup
 media doctor
 ```
 
-`media setup` 会初始化工作区、可选配置平台登录凭证，并自动安装 Skills。
+`media setup` 会初始化工作区、可选配置平台登录凭证，并自动安装 Skills。二次运行时会展示当前配置摘要。
+
+`--target` 默认为 `all`（Cursor + Claude Code + Codex）。
 
 ## Mode A（开发者）
 
@@ -23,9 +25,10 @@ media doctor
 ## Skills 管理
 
 ```bash
-media skill install    # 安装 / 重装
-media skill update     # 从远程仓库更新
-media skill uninstall  # 卸载
+media skill install              # 默认安装到 cursor、claude、codex
+media skill install --target codex # 仅 Codex
+media skill update
+media skill uninstall
 ```
 
 ## 环境变量

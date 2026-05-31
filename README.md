@@ -29,12 +29,12 @@ Repo 根目录即工作区（`.media-manager/repo-marker.json`）。
 
 | 命令 | 说明 |
 |------|------|
-| `media setup` | 初始化工作区与全局配置 |
+| `media setup` | 初始化工作区与全局配置（二次运行展示当前状态摘要） |
 | `media workspace show` | 显示当前工作区路径 |
 | `media doctor` | 环境自检 |
 | `media news fetch` | 抓取 RSS 资讯 |
 | `media analytics fetch --all` | 抓取各平台运营数据 |
-| `media skill install` | 安装 Skills 到 Cursor / Claude 等 |
+| `media skill install` | 安装 Skills（默认 cursor + claude + codex） |
 | `media skill update` | 更新 Skills |
 | `media skill uninstall` | 卸载 Skills |
 
@@ -59,9 +59,10 @@ Repo 根目录即工作区（`.media-manager/repo-marker.json`）。
 
 ## 工作流
 
-1. **daily-digest** — RSS → 筛选 → 中文日报 → 去重  
-2. **write-and-publish** — 选题 → 写作 → 配图 → 多平台发布  
-3. **analyze-operation** — 数据抓取 → 复盘 → 更新 guidance  
+1. **daily-digest** — RSS → 筛选 → 中文日报 → 去重（仅素材，不写作）  
+2. **write-and-publish** — 选题 → 写作 → 配图 → 多平台发布（无素材时可先 daily-digest）  
+3. **publish-only** — 已有成稿 → 选平台 → CLI 发布（不改写正文）  
+4. **analyze-operation** — 数据抓取 → 复盘 → 更新 guidance  
 
 定义见 `skills/media-manager/references/workflows/`，已镜像到 `.cursor/commands`、`.claude/commands`、`.github/instructions/`。
 
