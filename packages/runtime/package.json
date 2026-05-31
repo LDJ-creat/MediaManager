@@ -1,6 +1,6 @@
 {
   "name": "@dsmlll/media-manager-runtime",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -20,8 +20,8 @@
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
-    "@dsmlll/media-manager-core": "0.1.7",
-    "@dsmlll/media-manager-platform-common": "0.1.7"
+    "@dsmlll/media-manager-core": "0.1.8",
+    "@dsmlll/media-manager-platform-common": "0.1.8"
   },
   "devDependencies": {
     "@types/node": "^24.6.0",
