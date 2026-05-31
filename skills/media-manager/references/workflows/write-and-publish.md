@@ -6,7 +6,9 @@
 
 若用户只需**资讯日报、不写作**，改用 [daily-digest](daily-digest.md)。
 
-无素材 RSS 驱动写作时：**先**完成 daily-digest 步骤 1–4 获得选题/素材，**再**从本工作流步骤 1 继续。
+无素材 RSS 驱动写作时：**先**完成 daily-digest 步骤 1–4 获得选题/素材，**再**从本工作流 Step 0 继续。
+
+内容族与 guidance 加载规则见 [platform-families.md](../platform-families.md)。
 
 ## 门禁
 
@@ -14,29 +16,64 @@
 
 ## 步骤
 
-### 1. 写作
+### 0. 平台确认（须用户确认）
 
-- 有选题/素材：按 `article-writer` skill 执行
-- 无选题：先 `media news fetch`，再 LLM 筛选选题
-- 输出：`$WORKSPACE/output/{slug}/article.md`
+询问目标发布组合（可多选）：
 
-### 2. 配图
+| 选项 | 内容族 | 说明 |
+|------|--------|------|
+| 微信 / CSDN / 掘金 | `longform` | 共用一篇 `article.md` |
+| 小红书 | `xhs` | 独立 `note.md` + 信息图 |
+| 全部 | `full-stack` | 默认同题，双产出 |
 
-按 `article-illustrator` skill；出图可用 `media image gen --prompt "..." --image $WORKSPACE/output/{slug}/images/cover.png`
+记录选择后再进入 Step 1。**未确认前不得开始选题。**
 
-**降级**：API 未配置或调用失败时，改用 Agent 内置生图工具；若无内置能力，告知用户无法配图（勿伪造路径）。
+### 1. 选题
 
-### 3. 发布（CLI）
+- 有选题/素材：按 `article-writer` skill Step 1
+- 无选题：先 `media news fetch`，再 LLM 筛选
+- Guidance：`topic-selection/general.md`；含 longform → + `longform.md`；含 xhs → + `platform/xiaohongshu.md`
+- full-stack：**默认同题**；不同题仅当用户明确要求
+
+### 2. 提纲
+
+- longform：article-writer 长文提纲 → 用户确认
+- xhs：note 结构 + 信息图节奏（可在 article-writer xhs 模式或 xhs-images Step 2 前对齐）
+- full-stack：**分叉提纲** — 长文章节 vs 笔记页序列；共享核心论点
+
+### 3. 写作
+
+| 分支 | skill | 产出 |
+|------|-------|------|
+| longform | `article-writer` + `writing/longform.md` | `output/{slug}/article.md` |
+| xhs | `article-writer`（xhs）+ `writing/platform/xiaohongshu.md` | `output/{slug}/note.md` |
+| full-stack | 并行两分支 | `article.md` + `note.md` |
+
+### 4. 配图
+
+| 分支 | skill | 产出 |
+|------|-------|------|
+| longform | `article-illustrator` | `output/{slug}/images/` |
+| xhs | `xhs-images` | `output/{slug}/xhs-images/` + 回写 `note.md` `images:` |
+| full-stack | 各走各的 skill | 两个目录 |
+
+**降级**：API 未配置时见各 skill 降级策略；勿伪造路径。
+
+**轻量路径**：已有 `article.md` 仅发小红书 → 提炼 `note.md` + 跑 `xhs-images`，不重写长文。
+
+### 5. 发布（CLI）
+
+发布前加载 `guidance/publishing/platform/{platform}.md`（longform 平台）。
 
 | 平台 | 命令 |
 |------|------|
 | 微信 | `media wechat post ...` |
 | CSDN | `media csdn post --file $WORKSPACE/output/{slug}/article.md --draft` |
 | 掘金 | `media juejin post --file $WORKSPACE/output/{slug}/article.md --draft` |
-| 小红书 | `media xhs post-note ...` |
+| 小红书 | `media xhs post-note --file $WORKSPACE/output/{slug}/note.md --cdp-url ...` |
 
-平台细节见各 platform skill（deep-dive）。
+**禁止**将 `article.md` 直接用于 `media xhs post-note`。
 
-### 4. 归档
+### 6. 归档
 
 记录各平台草稿链接 / media_id。

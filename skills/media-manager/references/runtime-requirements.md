@@ -16,6 +16,10 @@ media skill install --target codex
 media skill update
 ```
 
+写作/配图相关：`article-writer`、`article-illustrator`（longform）、`xhs-images`（小红书信息图，依赖 `baoyu-image-gen` / `media image gen`）。
+
+Guidance 模板在 `media setup` 时 seed 到工作区 `guidance/`（canonical 源：`skills/media-manager/references/guidance/`）。
+
 ## 其他运行时
 
 - **Bun** 或 `npx -y bun`：微信公众号、AI 出图
