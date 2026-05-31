@@ -1,18 +1,30 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import {
   ensureWorkspaceLayout,
   getDefaultWorkspacePath,
+  getGlobalConfigDir,
+  getGlobalConfigPath,
   isGuidanceLayoutReady,
   readGlobalConfig,
   resolveWorkspace,
   setupWorkspace,
-  writeGlobalConfig,
 } from "../src/index.js";
+import { findRepoRoot } from "../src/repo-root.js";
+import {
+  clearIsolatedGlobalConfig,
+  createIsolatedTestRoot,
+  useIsolatedGlobalConfig,
+} from "./isolated-global-config.js";
 
-const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "mm-core-test-"));
+const tmpRoot = createIsolatedTestRoot();
+useIsolatedGlobalConfig(tmpRoot);
+
+function testGlobalConfigDirUsesEnvOverride() {
+  assert.equal(getGlobalConfigDir(), path.join(tmpRoot, "global-config"));
+  assert.equal(getGlobalConfigPath(), path.join(tmpRoot, "global-config", "config.json"));
+}
 
 function testResolveWorkspaceFromExplicit() {
   const ws = path.join(tmpRoot, "explicit-ws");
@@ -40,14 +52,13 @@ function testSetupWorkspace() {
   const global = readGlobalConfig();
   assert.ok(global);
   assert.equal(global!.workspace, path.resolve(ws));
+  assert.equal(fs.existsSync(getGlobalConfigPath()), true);
 }
 
 function testDefaultWorkspacePath() {
   const def = getDefaultWorkspacePath();
   assert.ok(def.includes("MediaManager-Workspace"));
 }
-
-import { findRepoRoot } from "../src/repo-root.js";
 
 function testFindRepoRoot() {
   const repo = path.join(tmpRoot, "fake-repo");
@@ -70,11 +81,13 @@ function testGlobalConfigOverridesRepoCwd() {
 }
 
 function run() {
+  testGlobalConfigDirUsesEnvOverride();
   testResolveWorkspaceFromExplicit();
   testSetupWorkspace();
   testDefaultWorkspacePath();
   testFindRepoRoot();
   testGlobalConfigOverridesRepoCwd();
+  clearIsolatedGlobalConfig();
   console.log("core tests passed");
 }
 
