@@ -12,7 +12,7 @@ import {
   writeSecretsFile,
 } from "@dsmlll/media-manager-platform-common";
 import { promptLine, promptSecretLine } from "./prompt.js";
-import { printStep, ui } from "./ui.js";
+import { printLabelRow, printStep, ui } from "./ui.js";
 
 const WECHAT_API_DOCS_URL = "https://developers.weixin.qq.com/doc/subscription/guide/dev/api/";
 
@@ -41,8 +41,8 @@ export async function promptWechatApiSetup(workspace: string): Promise<void> {
     "微信公众号 API 密钥",
     "用于草稿箱发布（与上方浏览器登录凭证不同）"
   );
-  console.log(`  ${ui.dim("浏览器登录")}  ${ui.blue(".media-manager/auth/wechat/")}  ${ui.dim("→ 运营数据")}`);
-  console.log(`  ${ui.dim("API 密钥")}    ${ui.blue(".media-manager/secrets/wechat-api.env")}  ${ui.dim("→ 文章发布")}`);
+  printLabelRow("浏览器登录", `${ui.blue(".media-manager/auth/wechat/")}  ${ui.dim("→ 运营数据")}`);
+  printLabelRow("API 密钥", `${ui.blue(".media-manager/secrets/wechat-api.env")}  ${ui.dim("→ 文章发布")}`);
   console.log("");
   console.log(`  ${ui.dim("获取 AppID / AppSecret、配置 IP 白名单：")}`);
   console.log(`  ${ui.blue(WECHAT_API_DOCS_URL)}`);
@@ -98,8 +98,8 @@ export async function promptImageGenSetup(workspace: string): Promise<void> {
 
   console.log("");
   printStep(ui.magenta("▸"), "图片生成 API 密钥", "用于文章配图（baoyu-image-gen）");
-  console.log(`  ${ui.dim("密钥")}      ${ui.blue(".media-manager/secrets/image-gen.env")}`);
-  console.log(`  ${ui.dim("偏好")}      ${ui.blue(".config/baoyu-image-gen/EXTEND.md")}`);
+  printLabelRow("密钥", ui.blue(".media-manager/secrets/image-gen.env"));
+  printLabelRow("偏好", ui.blue(".config/baoyu-image-gen/EXTEND.md"));
   console.log("");
 
   let yes: boolean;

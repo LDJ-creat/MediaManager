@@ -3,6 +3,29 @@ const NO_COLOR =
   process.env.TERM === "dumb" ||
   !process.stdout.isTTY;
 
+/** Strip ANSI escape codes for width calculation. */
+export function stripAnsi(text: string): string {
+  return text.replace(/\x1b\[[0-9;]*m/g, "");
+}
+
+/** Terminal display width (CJK and other wide chars count as 2). */
+export function visibleWidth(text: string): number {
+  let width = 0;
+  for (const char of stripAnsi(text)) {
+    width += char.charCodeAt(0) > 0xff ? 2 : 1;
+  }
+  return width;
+}
+
+/** Pad plain text to a fixed display width. */
+export function padDisplay(text: string, width: number): string {
+  const pad = Math.max(0, width - visibleWidth(text));
+  return text + " ".repeat(pad);
+}
+
+/** Standard label column width for setup / config summaries. */
+export const SUMMARY_LABEL_WIDTH = 10;
+
 function wrap(code: string, text: string): string {
   if (NO_COLOR) return text;
   return `\x1b[${code}m${text}\x1b[0m`;
@@ -31,7 +54,20 @@ export function printBanner(): void {
 
 export function printStep(icon: string, label: string, detail?: string): void {
   const head = `${icon} ${ui.bold(label)}`;
-  console.log(detail ? `${head}\n   ${ui.dim(detail)}` : head);
+  if (detail) {
+    console.log(`${head}  ${ui.dim("·")}  ${detail}`);
+  } else {
+    console.log(head);
+  }
+}
+
+/** Two-column summary row: fixed-width dim label + value. */
+export function printLabelRow(
+  label: string,
+  value: string,
+  labelWidth = SUMMARY_LABEL_WIDTH
+): void {
+  console.log(`  ${ui.dim(padDisplay(label, labelWidth))}  ${value}`);
 }
 
 export function formatDoctorLine(ok: boolean, fatal: boolean, msg: string): string {
