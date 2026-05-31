@@ -15,7 +15,9 @@
 | `media workspace set <path>` | 更改工作区 |
 | `media init [path] [--with-cursor]` | 补全目录；可选写入 `.cursor/commands` |
 | `media doctor` | 环境与健康检查 |
-| `media skill install [--minimal]` | 安装 skill 到 Agent 目录 |
+| `media skill install [--target cursor\|claude\|all]` | 安装 Skills |
+| `media skill update [--target cursor\|claude\|all]` | 更新 Skills |
+| `media skill uninstall` | 卸载 Skills |
 
 ## News
 
