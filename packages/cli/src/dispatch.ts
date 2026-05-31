@@ -78,6 +78,42 @@ export function parseArgs(argv: string[]): ParsedArgs {
   return { command, flags, positional };
 }
 
+/** Tokens swallowed into command[2+] by parseArgs — merge back for script forwarding. */
+export function positionalWithCommandTail(
+  command: string[],
+  positional: string[],
+  prefixLength: number
+): string[] {
+  return [...command.slice(prefixLength), ...positional];
+}
+
+export function forwardWechatPostArgs(
+  flags: Record<string, string | boolean>,
+  command: string[],
+  positional: string[]
+): string[] {
+  const tail = positionalWithCommandTail(command, positional, 2);
+  const file =
+    (typeof flags.file === "string" ? flags.file : undefined) ??
+    tail.find((token) => !token.startsWith("-"));
+
+  const args: string[] = [];
+  if (file) args.push(file);
+
+  for (const key of ["title", "author", "summary", "type", "theme", "color", "cover"] as const) {
+    const value = flags[key];
+    if (typeof value === "string") args.push(`--${key}`, value);
+  }
+  if (flags["dry-run"] === true) args.push("--dry-run");
+  if (flags.cite === true) args.push("--cite");
+  if (flags["no-cite"] === true) args.push("--no-cite");
+
+  for (const token of tail) {
+    if (token !== file && !args.includes(token)) args.push(token);
+  }
+  return args;
+}
+
 export function getWorkspace(flags: Record<string, string | boolean>): string {
   const explicit = typeof flags.workspace === "string" ? flags.workspace : undefined;
   return resolveWorkspace({ explicit });
@@ -514,14 +550,21 @@ export function runPlatformPost(
   platformKey: string,
   script: string,
   flags: Record<string, string | boolean>,
-  positional: string[]
+  positional: string[],
+  command: string[],
+  commandPrefixLength = 2
 ): number {
+  const merged = positionalWithCommandTail(command, positional, commandPrefixLength);
   const args: string[] = [];
-  const file = typeof flags.file === "string" ? flags.file : positional[0];
+  const file = typeof flags.file === "string" ? flags.file : merged[0];
   if (file) args.push("--file", file);
   if (flags.draft) args.push("--draft");
   if (typeof flags.state === "string") args.push("--state", flags.state);
   if (typeof flags.output === "string") args.push("--output", flags.output);
+  for (let i = 1; i < merged.length; i++) {
+    const extra = merged[i]!;
+    if (!args.includes(extra)) args.push(extra);
+  }
   return spawnTsxScript(workspace, skill, script, args, {
     MEDIA_ANALYTICS_DIR: path.join(workspace, ".media-manager", "data", "analytics", platformKey),
     ...platformAuthEnv(workspace, platformKey),
@@ -682,7 +725,7 @@ export async function dispatch(argv: string[]): Promise<number> {
       workspace,
       "post-to-wechat",
       "scripts/wechat-api.ts",
-      positional,
+      forwardWechatPostArgs(flags, command, positional),
       {},
       [WECHAT_API_ENV]
     );
@@ -708,7 +751,7 @@ export async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (c0 === "csdn" && c1 === "post") {
-    return runPlatformPost(workspace, "csdn-publish-and-data", "csdn", "scripts/post-article.ts", flags, positional);
+    return runPlatformPost(workspace, "csdn-publish-and-data", "csdn", "scripts/post-article.ts", flags, positional, command);
   }
   if (c0 === "csdn" && c1 === "analytics" && c2 === "fetch") {
     return runAnalyticsFetch(workspace, "csdn-publish-and-data", "csdn", flags);
@@ -721,7 +764,7 @@ export async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (c0 === "juejin" && c1 === "post") {
-    return runPlatformPost(workspace, "juejin-publish-and-data", "juejin", "scripts/post-article.ts", flags, positional);
+    return runPlatformPost(workspace, "juejin-publish-and-data", "juejin", "scripts/post-article.ts", flags, positional, command);
   }
   if (c0 === "juejin" && c1 === "analytics" && c2 === "fetch") {
     return runAnalyticsFetch(workspace, "juejin-publish-and-data", "juejin", flags);
@@ -734,7 +777,7 @@ export async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (c0 === "xhs" && c1 === "post-note") {
-    return runPlatformPost(workspace, "xiaohongshu-publish-and-data", "xhs", "scripts/post-note.ts", flags, positional);
+    return runPlatformPost(workspace, "xiaohongshu-publish-and-data", "xhs", "scripts/post-note.ts", flags, positional, command);
   }
   if (c0 === "xhs" && c1 === "analytics" && c2 === "fetch") {
     return runAnalyticsFetch(workspace, "xiaohongshu-publish-and-data", "xhs", flags);
@@ -756,7 +799,7 @@ export async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (c0 === "image" && c1 === "gen") {
-    const args = [...positional];
+    const args = positionalWithCommandTail(command, positional, 2);
     if (typeof flags.prompt === "string") args.push("--prompt", flags.prompt);
     if (typeof flags.image === "string") args.push("--image", flags.image);
     return spawnBunScript(

@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { parseArgs, runWorkspaceSet } from "../src/dispatch.js";
+import {
+  forwardWechatPostArgs,
+  parseArgs,
+  positionalWithCommandTail,
+  runWorkspaceSet,
+} from "../src/dispatch.js";
 import {
   clearIsolatedGlobalConfig,
   createIsolatedTestRoot,
@@ -41,4 +46,44 @@ test("runWorkspaceSet accepts path from command[2]", () => {
   } finally {
     clearIsolatedGlobalConfig();
   }
+});
+
+test("positionalWithCommandTail recovers file path from command[2]", () => {
+  const parsed = parseArgs([
+    "wechat",
+    "post",
+    "output/demo/article.md",
+    "--title",
+    "Hello",
+  ]);
+  assert.deepEqual(parsed.command, ["wechat", "post", "output/demo/article.md"]);
+  assert.equal(parsed.flags.title, "Hello");
+  const merged = positionalWithCommandTail(parsed.command, parsed.positional, 2);
+  assert.deepEqual(merged, ["output/demo/article.md"]);
+});
+
+test("forwardWechatPostArgs forwards file and flags without placeholder", () => {
+  const parsed = parseArgs([
+    "wechat",
+    "post",
+    "output/demo/article.md",
+    "--title",
+    "Hello",
+    "--summary",
+    "World",
+  ]);
+  const args = forwardWechatPostArgs(parsed.flags, parsed.command, parsed.positional);
+  assert.deepEqual(args, [
+    "output/demo/article.md",
+    "--title",
+    "Hello",
+    "--summary",
+    "World",
+  ]);
+});
+
+test("forwardWechatPostArgs accepts --file flag form", () => {
+  const parsed = parseArgs(["wechat", "post", "--file", "output/demo/article.md", "--title", "Hi"]);
+  const args = forwardWechatPostArgs(parsed.flags, parsed.command, parsed.positional);
+  assert.deepEqual(args, ["output/demo/article.md", "--title", "Hi"]);
 });
