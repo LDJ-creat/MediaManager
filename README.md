@@ -47,8 +47,9 @@ Repo 根目录即工作区（`.media-manager/repo-marker.json`）。
 | Skill | 用途 |
 |-------|------|
 | **media-manager** | 总控编排（工作流入口） |
-| article-writer | 文章写作 |
-| article-illustrator | 自动配图 |
+| article-writer | 长文 / 小红书笔记写作 |
+| article-illustrator | 长文自动配图 |
+| xhs-images | 小红书信息图轮播 |
 | news-skill | 每日科技资讯 RSS |
 | post-to-wechat | 微信公众号发布 |
 | baoyu-image-gen | AI 图片生成 |
@@ -70,12 +71,17 @@ Repo 根目录即工作区（`.media-manager/repo-marker.json`）。
 
 ```text
 {workspace}/
-├── output/{slug}/article.md
-├── guidance/
+├── output/{slug}/
+│   ├── article.md          # longform（微信/CSDN/掘金）
+│   ├── note.md             # 小红书
+│   ├── images/             # 长文配图
+│   └── xhs-images/         # 小红书轮播图
+├── guidance/               # 个人工作区（gitignore，setup 时从模板 seed）
+│   ├── topic-selection/    # general, longform, platform/xiaohongshu
+│   ├── writing/
+│   ├── publishing/platform/
+│   └── analytics/platform/
 └── .media-manager/
-    ├── data/news/
-    ├── data/analytics/{platform}/
-    └── auth/{platform}/
 ```
 
 详见 [docs/workspace.md](docs/workspace.md)。
