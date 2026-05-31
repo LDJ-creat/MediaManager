@@ -1,6 +1,6 @@
 {
   "name": "@dsmlll/media-manager-runtime",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -19,8 +19,8 @@
     "postinstall": "node scripts/install-skill-deps.mjs"
   },
   "dependencies": {
-    "@dsmlll/media-manager-core": "0.1.4",
-    "@dsmlll/media-manager-platform-common": "0.1.4"
+    "@dsmlll/media-manager-core": "0.1.5",
+    "@dsmlll/media-manager-platform-common": "0.1.5"
   },
   "devDependencies": {
     "@types/node": "^24.6.0",

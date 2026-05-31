@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@dsmlll/media-manager-platform-common": "0.1.4"
+    "@dsmlll/media-manager-platform-common": "0.1.5"
   },
   "devDependencies": {
     "@types/node": "^24.6.0"
