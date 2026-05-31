@@ -10,6 +10,8 @@
 
 内容族与 guidance 加载规则见 [platform-families.md](../platform-families.md)。
 
+编排规范（**平台选择**、**Subagent 委派**）见 [orchestration.md](../orchestration.md)。
+
 ## 门禁
 
 选题、提纲、初稿、发布各阶段须用户确认（见 `article-writer` skill）。
@@ -18,7 +20,12 @@
 
 ### 0. 平台确认（须用户确认）
 
-询问目标发布组合（可多选）：
+用户**未明确**目标平台时，按 [orchestration.md § 平台选择协议](../orchestration.md#平台选择协议) 执行：
+
+- **有选择器**（如 Cursor `AskQuestion`）：多选「微信公众号 / CSDN / 掘金 / 小红书 / 全部」
+- **无选择器**：自然语言列出选项并请用户回复（可多选）
+
+用户**已明确**平台则跳过本步。
 
 | 选项 | 内容族 | 说明 |
 |------|--------|------|
@@ -26,14 +33,15 @@
 | 小红书 | `xhs` | 独立 `note.md` + 信息图 |
 | 全部 | `full-stack` | 默认同题，双产出 |
 
-记录选择后再进入 Step 1。**未确认前不得开始选题。**
+记录选择并向用户复述确认后再进入 Step 1。**未确认前不得开始选题。**
 
 ### 1. 选题
 
-- 有选题/素材：按 `article-writer` skill Step 1
-- 无选题：先 `media news fetch`，再 LLM 筛选
+- 有选题/素材：按 `article-writer` skill Step 1 分支 A
+- **无选题**：**优先 Subagent 委派 `news-skill`**（完整 daily-digest 流程：`media news fetch` → LLM 筛选 → 日报 → `media news mark-seen`）；不支持 Subagent 时 inline 同等流程。详见 [orchestration.md](../orchestration.md#subagent-编排强制偏好)
 - Guidance：`topic-selection/general.md`；含 longform → + `longform.md`；含 xhs → + `platform/xiaohongshu.md`
 - full-stack：**默认同题**；不同题仅当用户明确要求
+- 呈现 3–5 个候选供用户选择；**未确认前不得进入 Step 2**
 
 ### 2. 提纲
 
@@ -51,17 +59,23 @@
 
 ### 4. 配图
 
-| 分支 | skill | 产出 |
-|------|-------|------|
+**优先 Subagent 委派**对应 skill；不支持 Subagent 时 inline 同等流程（见 [orchestration.md](../orchestration.md)）。
+
+| 分支 | skill（Subagent 目标） | 产出 |
+|------|------------------------|------|
 | longform | `article-illustrator` | `output/{slug}/images/` |
 | xhs | `xhs-images` | `output/{slug}/xhs-images/` + 回写 `note.md` `images:` |
-| full-stack | 各走各的 skill | 两个目录 |
+| full-stack | 各委派各 skill（**可并行**） | 两个目录 |
+
+主编排验证产物路径与回写完整性后再进入 Step 5。
 
 **降级**：API 未配置时见各 skill 降级策略；勿伪造路径。
 
-**轻量路径**：已有 `article.md` 仅发小红书 → 提炼 `note.md` + 跑 `xhs-images`，不重写长文。
+**轻量路径**：已有 `article.md` 仅发小红书 → 提炼 `note.md` + Subagent/`xhs-images`，不重写长文。
 
 ### 5. 发布（CLI）
+
+**优先 Subagent** 按平台加载 `guidance/publishing/platform/{platform}.md` 并构造 CLI 参数；多平台**可并行**委派。主编排汇总各平台 CLI 结果与链接。
 
 发布前加载 `guidance/publishing/platform/{platform}.md`（longform 平台）。
 

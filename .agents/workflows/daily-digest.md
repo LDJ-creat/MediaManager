@@ -2,6 +2,8 @@
 
 生成「每日科技资讯」日报与 RSS 素材。**不含**完整写作与发布；写作见 [write-and-publish](write-and-publish.md)，仅发布见 [publish-only](publish-only.md)。
 
+被 write-and-publish 调用时，**优先由 Subagent 执行本工作流 + `news-skill` skill**；主编排仅做用户选题确认。见 [orchestration.md](../../skills/media-manager/references/orchestration.md)。
+
 执行前先 `media workspace show`。
 
 ## 步骤

@@ -43,6 +43,10 @@ function rewriteForMirror(content) {
     /\]\(\.\.\/platform-families\.md\)/g,
     "](../../skills/media-manager/references/platform-families.md)",
   );
+  text = text.replace(
+    /\]\(\.\.\/orchestration\.md([^)]*)\)/g,
+    "](../../skills/media-manager/references/orchestration.md$1)",
+  );
   text = text.replace(/`skills\//g, "`../../skills/");
   text = text.replace(/\]\(skills\//g, "](../../skills/");
   return text;

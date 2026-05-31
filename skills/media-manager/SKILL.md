@@ -14,6 +14,8 @@ description: MediaManager 总控 skill。当用户需要 RSS 选题写作、根�
 3. 优先使用 `media ...` CLI，不要假设能读取 monorepo 源码。
 4. 所有产物写入 **工作区**（`output/`、`guidance/`、`.media-manager/data/`），不要写到 Agent 临时目录。
 5. LLM 门禁流程（选题/提纲/审稿）见各 workflow，不得跳过。
+6. **平台未指明时**：支持选择器则用多选 UI 让用户选平台；否则自然语言询问。详见 [orchestration.md](references/orchestration.md#平台选择协议)。
+7. **Subagent 优先**：无选题走 **news-skill**；配图走 **article-illustrator** / **xhs-images**；发布走各平台 skill——优先委派 Subagent，不支持时 inline 同等流程。详见 [orchestration.md](references/orchestration.md#subagent-编排强制偏好)。
 
 ## 核心能力
 
@@ -57,6 +59,7 @@ media analytics fetch --all
 
 ## 参考
 
+- [Agent 编排规范（平台选择 + Subagent）](references/orchestration.md)
 - [内容族与 guidance 矩阵](references/platform-families.md)
 - [CLI 契约](references/cli-contract.md)
 - [运行前提](references/runtime-requirements.md)

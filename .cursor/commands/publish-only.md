@@ -8,6 +8,8 @@ description: 将已有成稿发布到微信/CSDN/掘金/小红书，不涉及写
 
 Guidance：发布前加载 `guidance/publishing/platform/{platform}.md`（longform 平台）。见 [platform-families.md](../../skills/media-manager/references/platform-families.md)。
 
+编排规范（**平台选择**、**Subagent 委派**）见 [orchestration.md](../../skills/media-manager/references/orchestration.md)。
+
 ## 前置
 
 - **longform 成稿**：`$WORKSPACE/output/{slug}/article.md`
@@ -25,7 +27,14 @@ Guidance：发布前加载 `guidance/publishing/platform/{platform}.md`（longfo
 
 ### 2. 确定目标平台
 
-用户已明确则跳过询问。
+用户**已明确**目标平台 → 跳过询问，直接进入 Step 3。
+
+用户**未明确**时，按 [orchestration.md § 平台选择协议](../../skills/media-manager/references/orchestration.md#平台选择协议) 执行：
+
+- **有选择器**（如 Cursor `AskQuestion`）：多选「微信公众号 / CSDN / 掘金 / 小红书 / 全部」
+- **无选择器**：自然语言列出下表选项并请用户回复（可多选）
+
+**收到明确选择前**不得执行 `media * post*`。
 
 | 选项 | 成稿 | 说明 |
 |------|------|------|
@@ -37,9 +46,9 @@ Guidance：发布前加载 `guidance/publishing/platform/{platform}.md`（longfo
 
 ### 3. 发布（CLI）
 
-发布前读取 `guidance/publishing/platform/{each}.md`。可从 `article.md` frontmatter `publish:` 读取各平台 title/summary/tags 变体。
+**优先 Subagent** 按平台加载 guidance、构造 metadata 与 CLI 参数；多平台**可并行**委派。主编排汇总链接与失败摘要。**不要**改写正文。
 
-**不要**改写正文；metadata 按 guidance 构造 CLI 参数。
+发布前读取 `guidance/publishing/platform/{each}.md`。可从 `article.md` frontmatter `publish:` 读取各平台 title/summary/tags 变体。
 
 | 平台 | 命令 | 发布方式 |
 |------|------|----------|
