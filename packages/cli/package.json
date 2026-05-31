@@ -1,6 +1,6 @@
 {
   "name": "@dsmlll/media-manager-cli",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "type": "module",
   "bin": {
     "media": "./dist/main.js"
@@ -16,8 +16,8 @@
     "postinstall": "node scripts/postinstall.mjs"
   },
   "dependencies": {
-    "@dsmlll/media-manager-core": "0.1.2",
-    "@dsmlll/media-manager-runtime": "0.1.2"
+    "@dsmlll/media-manager-core": "0.1.3",
+    "@dsmlll/media-manager-runtime": "0.1.3"
   },
   "devDependencies": {
     "@types/node": "^24.6.0",
