@@ -1,7 +1,10 @@
 import {
+  getImageGenDefaultModel,
   getImageGenStatus,
   getWechatApiStatus,
+  resolveImageGenEffectiveModel,
 } from "@dsmlll/media-manager-platform-common";
+import fs from "node:fs";
 import { getPlatformAuthStatuses } from "./setup-status.js";
 import { ui } from "./ui.js";
 
@@ -13,6 +16,8 @@ export interface ConfigShowResult {
     imageGen: {
       configured: boolean;
       provider: string | null;
+      model: string | null;
+      effectiveModel: string | null;
       envPath: string;
       extendPath: string | null;
       missingKeys: string[];
@@ -24,6 +29,16 @@ export function buildConfigShowResult(workspace: string): ConfigShowResult {
   const authStatuses = getPlatformAuthStatuses(workspace);
   const wechatApi = getWechatApiStatus(workspace);
   const imageGen = getImageGenStatus(workspace);
+  let model: string | null = null;
+  let effectiveModel: string | null = null;
+  if (imageGen.provider && imageGen.extendPath && fs.existsSync(imageGen.extendPath)) {
+    const extendContent = fs.readFileSync(imageGen.extendPath, "utf8");
+    const resolved = resolveImageGenEffectiveModel(imageGen.provider, extendContent);
+    model = resolved.configured;
+    effectiveModel = resolved.effective;
+  } else if (imageGen.provider) {
+    effectiveModel = getImageGenDefaultModel(imageGen.provider);
+  }
 
   const auth: Record<string, boolean> = {};
   for (const s of authStatuses) {
@@ -41,6 +56,8 @@ export function buildConfigShowResult(workspace: string): ConfigShowResult {
       imageGen: {
         configured: imageGen.configured,
         provider: imageGen.provider,
+        model,
+        effectiveModel,
         envPath: imageGen.envPath,
         extendPath: imageGen.extendPath,
         missingKeys: imageGen.missingKeys,
@@ -71,8 +88,9 @@ export function printConfigShow(workspace: string, asJson: boolean): void {
   );
   const ig = result.api.imageGen;
   const igLabel = ig.provider ? ` (${ig.provider})` : "";
+  const modelLabel = ig.effectiveModel ? `  ${ui.dim("model")} ${ig.effectiveModel}` : "";
   console.log(
-    `  图片生成   ${ig.configured ? ui.green("✓ 已配置") : ui.dim("— 未配置")}${igLabel}  ${ui.dim(ig.envPath)}`
+    `  图片生成   ${ig.configured ? ui.green("✓ 已配置") : ui.dim("— 未配置")}${igLabel}${modelLabel}  ${ui.dim(ig.envPath)}`
   );
   if (!ig.configured && ig.missingKeys.length > 0) {
     console.log(`  ${ui.dim("缺少")}     ${ig.missingKeys.join(", ")}`);

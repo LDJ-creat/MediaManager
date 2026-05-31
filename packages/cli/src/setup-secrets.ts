@@ -1,14 +1,18 @@
+import fs from "node:fs";
 import {
   buildImageGenSecretValues,
+  getImageGenDefaultModel,
   getImageGenStatus,
   getWechatApiStatus,
   IMAGE_GEN_ENV,
   type ImageGenProvider,
+  parseExtendDefaultModel,
+  resolveImageGenExtendPath,
   verifyWechatApiCredentials,
   WECHAT_API_ENV,
   WECHAT_APP_ID_KEY,
   WECHAT_APP_SECRET_KEY,
-  writeImageGenExtendProvider,
+  writeImageGenExtendConfig,
   writeSecretsFile,
 } from "@dsmlll/media-manager-platform-common";
 import { promptLine, promptSecretLine } from "./prompt.js";
@@ -129,17 +133,42 @@ export async function promptImageGenSetup(workspace: string): Promise<void> {
   const provider = IMAGE_GEN_PROVIDERS[index]?.key ?? "google";
   const providerMeta = IMAGE_GEN_PROVIDERS.find((p) => p.key === provider)!;
 
+  const defaultModel = getImageGenDefaultModel(provider);
+  const extendPathExisting = resolveImageGenExtendPath(workspace);
+  const extendContent = fs.existsSync(extendPathExisting)
+    ? fs.readFileSync(extendPathExisting, "utf8")
+    : null;
+  const configuredModel = extendContent
+    ? parseExtendDefaultModel(extendContent, provider)
+    : null;
+
+  console.log("");
+  printLabelRow("默认模型", ui.blue(defaultModel));
+  if (configuredModel && configuredModel !== defaultModel) {
+    printLabelRow("当前配置", ui.dim(configuredModel));
+  }
+  console.log(`  ${ui.dim("可选：输入模型 ID 覆盖默认；直接回车则使用上表默认模型")}`);
+
+  const modelInput = await promptLine(`  ${ui.bold("模型")} ${ui.dim("[可选]")} `);
+  const modelOverride = modelInput.trim() || null;
+
   const key = await promptSecretLine(`  ${ui.bold("API Key")} ${ui.dim(`(${providerMeta.hint})`)} `);
   if (!key) {
     console.log(`  ${ui.yellow("⚠")} 未输入 API Key，跳过`);
     return;
   }
+
   const values = buildImageGenSecretValues(provider, key);
 
   const envPath = writeSecretsFile(workspace, IMAGE_GEN_ENV, values);
-  const extendPath = writeImageGenExtendProvider(workspace, provider);
+  const extendPath = writeImageGenExtendConfig(workspace, provider, { model: modelOverride });
+  const effectiveModel = modelOverride ?? defaultModel;
+
   console.log(`\n  ${ui.green("✓")} API Key 已保存至 ${ui.blue(envPath)}`);
   console.log(`  ${ui.green("✓")} 默认 Provider 已写入 ${ui.blue(extendPath)} (${providerMeta.label})`);
+  console.log(
+    `  ${ui.green("✓")} 出图模型 ${ui.blue(effectiveModel)}${modelOverride ? "" : ui.dim(" (内置默认)")}`
+  );
 
   const updated = getImageGenStatus(workspace);
   if (updated.configured) {
