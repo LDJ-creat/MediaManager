@@ -3,7 +3,7 @@
 ## CLI
 
 - Node.js >= 20
-- 已安装 `@media-manager/cli`（`npm install -g @media-manager/cli`）
+- 已安装 `@dsmlll/media-manager-cli`（`npm install -g @dsmlll/media-manager-cli`）
 - 已配置工作区（安装 CLI 时交互 setup，或 `media setup --interactive`）
 
 ## Skill

@@ -17,7 +17,7 @@ Auth：`$WORKSPACE/.media-manager/auth/juejin/storageState.json`
 
 ## 1. Install runtime
 
-Node.js 20+ and `@media-manager/cli`, or monorepo dev build.
+Node.js 20+ and `@dsmlll/media-manager-cli`, or monorepo dev build.
 
 ## 2. Script dependencies（Deep-dive）
 

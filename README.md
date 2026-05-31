@@ -7,7 +7,7 @@
 ### Mode B（终端用户，推荐）
 
 ```bash
-npm install -g @media-manager/cli
+npm install -g @dsmlll/media-manager-cli
 npx skills add LDJ-creat/MediaManager --skill media-manager -g -a cursor -a claude-code -y
 media doctor
 ```

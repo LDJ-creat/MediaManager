@@ -9,8 +9,8 @@
     "skills/xiaohongshu-publish-and-data/scripts"
   ],
   "scripts": {
-    "build": "npm run build -w @media-manager/core && npm run build -w @media-manager/platform-common && npm run build -w @media-manager/runtime && npm run build -w @media-manager/cli",
-    "test": "npm run test -w @media-manager/core && npm run test -w @media-manager/cli",
+    "build": "npm run build -w @dsmlll/media-manager-core && npm run build -w @dsmlll/media-manager-platform-common && npm run build -w @dsmlll/media-manager-runtime && npm run build -w @dsmlll/media-manager-cli",
+    "test": "npm run test -w @dsmlll/media-manager-core && npm run test -w @dsmlll/media-manager-cli",
     "media": "node packages/cli/dist/main.js"
   },
   "engines": {

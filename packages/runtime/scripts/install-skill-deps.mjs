@@ -12,13 +12,13 @@ function patchPlatformCommonDep(scriptsPkgPath) {
   if (!fs.existsSync(scriptsPkgPath)) return;
   const scriptsDir = path.dirname(scriptsPkgPath);
   const pkg = JSON.parse(fs.readFileSync(scriptsPkgPath, "utf8"));
-  if (!pkg.dependencies?.["@media-manager/platform-common"]) return;
+  if (!pkg.dependencies?.["@dsmlll/media-manager-platform-common"]) return;
 
   const rel = path
     .relative(scriptsDir, platformCommonDir)
     .split(path.sep)
     .join("/");
-  pkg.dependencies["@media-manager/platform-common"] = `file:${rel}`;
+  pkg.dependencies["@dsmlll/media-manager-platform-common"] = `file:${rel}`;
   fs.writeFileSync(scriptsPkgPath, JSON.stringify(pkg, null, 2), "utf8");
 }
 
@@ -32,7 +32,7 @@ for (const skill of fs.readdirSync(skillsDir, { withFileTypes: true })) {
   if (!fs.existsSync(scriptsPkg)) continue;
   patchPlatformCommonDep(scriptsPkg);
   const scriptsDir = path.dirname(scriptsPkg);
-  if (fs.existsSync(path.join(scriptsDir, "node_modules", "@media-manager", "platform-common"))) {
+  if (fs.existsSync(path.join(scriptsDir, "node_modules", "@dsmlll", "media-manager-platform-common"))) {
     continue;
   }
   console.log(`Installing ${skill.name} script dependencies...`);

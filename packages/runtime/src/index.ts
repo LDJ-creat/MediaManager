@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { findMonorepoRoot } from "@media-manager/core";
+import { findMonorepoRoot } from "@dsmlll/media-manager-core";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

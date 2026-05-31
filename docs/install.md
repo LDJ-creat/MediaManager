@@ -3,7 +3,7 @@
 ## Mode B（推荐终端用户）
 
 ```bash
-npm install -g @media-manager/cli
+npm install -g @dsmlll/media-manager-cli
 # 安装过程中交互设置 workspace（回车使用默认 Documents 路径）
 
 npx skills add LDJ-creat/MediaManager --skill media-manager -g -a cursor -a claude-code -y

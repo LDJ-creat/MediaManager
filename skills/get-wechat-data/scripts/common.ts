@@ -7,7 +7,7 @@ import {
   parseKeyValueMarkdown,
   resolveAnalyticsDir,
   resolveAuthFileRef,
-} from "@media-manager/platform-common";
+} from "@dsmlll/media-manager-platform-common";
 import type { AuthFileRef, CliOptions, PageType, SkillConfig } from "./types";
 
 const PLATFORM = "wechat";

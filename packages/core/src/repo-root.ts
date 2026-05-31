@@ -40,7 +40,7 @@ export function resolveSkillsDir(startDir: string = process.cwd()): string {
   if (repo) {
     return path.join(repo, "skills");
   }
-  throw new Error("Cannot locate MediaManager skills directory. Install @media-manager/cli or run from repo.");
+  throw new Error("Cannot locate MediaManager skills directory. Install @dsmlll/media-manager-cli or run from repo.");
 }
 
 export function resolveRuntimeSkillPath(skillName: string, relativeScript: string, startDir?: string): string {

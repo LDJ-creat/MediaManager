@@ -8,7 +8,7 @@ Clone 仓库后，**repo 根目录** 即 workspace（存在 `.media-manager/repo
 
 ## Mode B（CLI 用户）
 
-安装 `@media-manager/cli` 时交互设置 workspace，默认：
+安装 `@dsmlll/media-manager-cli` 时交互设置 workspace，默认：
 
 - Windows：`Documents\MediaManager-Workspace`
 - macOS/Linux：`~/Documents/MediaManager-Workspace`
