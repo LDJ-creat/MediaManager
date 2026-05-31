@@ -4,6 +4,7 @@ import path from "node:path";
 import type { GlobalConfig, WorkspaceConfig, WorkspacePaths } from "./types.js";
 import { CLI_VERSION, GLOBAL_CONFIG_VERSION, WORKSPACE_CONFIG_VERSION, WORKSPACE_LAYOUT } from "./types.js";
 import { findRepoRoot } from "./repo-root.js";
+import { ensureGuidanceLayout, seedGuidanceTemplates } from "./guidance-seed.js";
 
 export function getGlobalConfigDir(): string {
   return path.join(os.homedir(), ".media-manager");
@@ -84,8 +85,8 @@ export function ensureWorkspaceLayout(workspace: string): WorkspacePaths {
   const paths = resolveWorkspacePaths(workspace);
   fs.mkdirSync(paths.outputDir, { recursive: true });
   fs.mkdirSync(paths.guidanceDir, { recursive: true });
-  fs.mkdirSync(path.join(paths.guidanceDir, "topic-selection"), { recursive: true });
-  fs.mkdirSync(path.join(paths.guidanceDir, "writing"), { recursive: true });
+  ensureGuidanceLayout(paths.guidanceDir);
+  seedGuidanceTemplates(paths.guidanceDir, paths.workspace);
   fs.mkdirSync(paths.analysisDir, { recursive: true });
   fs.mkdirSync(paths.newsDataDir, { recursive: true });
   fs.mkdirSync(paths.authDir, { recursive: true });
