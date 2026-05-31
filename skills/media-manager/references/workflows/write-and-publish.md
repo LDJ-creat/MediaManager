@@ -1,6 +1,12 @@
 # Write and Publish 工作流
 
-从选题到多平台发布。执行前先 `media workspace show`；产物在 `$WORKSPACE/output/{slug}/`。
+从选题到多平台发布的**完整写作流程**。执行前先 `media workspace show`；产物在 `$WORKSPACE/output/{slug}/`。
+
+若用户**已有成稿、只需发布**，改用 [publish-only](publish-only.md)，不要在此工作流中重复写作步骤。
+
+若用户只需**资讯日报、不写作**，改用 [daily-digest](daily-digest.md)。
+
+无素材 RSS 驱动写作时：**先**完成 daily-digest 步骤 1–4 获得选题/素材，**再**从本工作流步骤 1 继续。
 
 ## 门禁
 
