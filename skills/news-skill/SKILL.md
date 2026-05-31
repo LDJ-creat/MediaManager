@@ -118,7 +118,10 @@ media news fetch --hours 24
 
 ## 配置文件
 
-- **RSS 源 & 参数**：`references/sources.json`（直接编辑 JSON，无需改代码）
+- **RSS 源 & 参数（CLI 用户）**：`$WORKSPACE/.media-manager/news/sources.json`
+  - 运行 `media news sources edit` 打开；**首次运行会从默认源复制**，再编辑即可
+  - `media news fetch` 优先读取该文件；不存在时使用内置默认 `references/sources.json`
+- **RSS 源 & 参数（源码开发）**：`references/sources.json`（直接编辑 JSON，无需改代码）
 - **评分标准参考**：`references/prompts.md`（记录筛选标准的详细说明，供参考）
 
 ### sources.json 结构
