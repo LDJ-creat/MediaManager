@@ -23,6 +23,33 @@ export const IMAGE_GEN_PROVIDER_KEYS: Record<ImageGenProvider, string[]> = {
   replicate: ["REPLICATE_API_TOKEN"],
 };
 
+/** Built-in defaults aligned with baoyu-image-gen provider modules. */
+export const IMAGE_GEN_DEFAULT_MODELS: Record<ImageGenProvider, string> = {
+  google: "gemini-3-pro-image-preview",
+  openai: "gpt-image-1.5",
+  openrouter: "google/gemini-3.1-flash-image-preview",
+  dashscope: "qwen-image-2.0-pro",
+  replicate: "google/nano-banana-pro",
+};
+
+export const IMAGE_GEN_MODEL_ENV_KEYS: Record<ImageGenProvider, string> = {
+  google: "GOOGLE_IMAGE_MODEL",
+  openai: "OPENAI_IMAGE_MODEL",
+  openrouter: "OPENROUTER_IMAGE_MODEL",
+  dashscope: "DASHSCOPE_IMAGE_MODEL",
+  replicate: "REPLICATE_IMAGE_MODEL",
+};
+
+export function getImageGenDefaultModel(
+  provider: ImageGenProvider,
+  env: Record<string, string | undefined> = {}
+): string {
+  const envKey = IMAGE_GEN_MODEL_ENV_KEYS[provider];
+  const fromFile = env[envKey]?.trim();
+  const fromProcess = process.env[envKey]?.trim();
+  return fromFile || fromProcess || IMAGE_GEN_DEFAULT_MODELS[provider];
+}
+
 export interface WechatApiStatus {
   configured: boolean;
   path: string;
@@ -255,42 +282,152 @@ export function writeImageGenExtendProvider(
   workspace: string,
   provider: ImageGenProvider
 ): string {
+  return writeImageGenExtendConfig(workspace, provider);
+}
+
+function formatYamlModelValue(model: string | null): string {
+  if (model === null) return "null";
+  if (/^[a-zA-Z0-9/._-]+$/.test(model)) return model;
+  return `"${model.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
+function buildImageGenExtendContent(
+  provider: ImageGenProvider,
+  modelByProvider: Partial<Record<ImageGenProvider, string | null>> = {}
+): string {
+  const lines = [
+    "---",
+    "version: 1",
+    `default_provider: ${provider}`,
+    "default_quality: null",
+    "default_aspect_ratio: null",
+    "default_image_size: null",
+    "default_model:",
+  ];
+  for (const p of Object.keys(IMAGE_GEN_PROVIDER_KEYS) as ImageGenProvider[]) {
+    const val = modelByProvider[p] ?? null;
+    lines.push(`  ${p}: ${formatYamlModelValue(val)}`);
+  }
+  lines.push("---", "");
+  return lines.join("\n");
+}
+
+function parseDefaultModelsFromExtend(
+  content: string
+): Partial<Record<ImageGenProvider, string | null>> {
+  const yamlMatch = content.match(/^---\s*\n([\s\S]*?)\n---/m);
+  const body = yamlMatch ? yamlMatch[1]! : content;
+  const out: Partial<Record<ImageGenProvider, string | null>> = {};
+  let inDefaultModel = false;
+
+  for (const line of body.split("\n")) {
+    if (/^default_model:\s*$/i.test(line.trim())) {
+      inDefaultModel = true;
+      continue;
+    }
+    if (!inDefaultModel) continue;
+
+    const match = line.match(/^  ([a-z]+):\s*(.+)$/i);
+    if (!match) {
+      if (line.trim() && !line.startsWith(" ")) inDefaultModel = false;
+      continue;
+    }
+
+    const key = match[1] as ImageGenProvider;
+    if (!(key in IMAGE_GEN_PROVIDER_KEYS)) continue;
+    const raw = match[2]!.trim();
+    out[key] = raw === "null" ? null : raw.replace(/^['"]|['"]$/g, "");
+  }
+
+  return out;
+}
+
+export function parseExtendDefaultModel(
+  content: string,
+  provider: ImageGenProvider
+): string | null {
+  const value = parseDefaultModelsFromExtend(content)[provider];
+  return value ?? null;
+}
+
+export function resolveImageGenEffectiveModel(
+  provider: ImageGenProvider,
+  extendContent: string | null,
+  env: Record<string, string | undefined> = {}
+): { configured: string | null; effective: string } {
+  const configured =
+    extendContent === null ? null : parseExtendDefaultModel(extendContent, provider);
+  return {
+    configured,
+    effective: configured ?? getImageGenDefaultModel(provider, env),
+  };
+}
+
+function updateExtendBodyProvider(body: string, provider: ImageGenProvider): string {
+  if (/^default_provider:/m.test(body)) {
+    return body.replace(/^default_provider:.*$/m, `default_provider: ${provider}`);
+  }
+  return `${body.trimEnd()}\ndefault_provider: ${provider}\n`;
+}
+
+function updateExtendBodyModel(
+  body: string,
+  provider: ImageGenProvider,
+  model: string | null
+): string {
+  const modelLine = `  ${provider}: ${formatYamlModelValue(model)}`;
+  if (/^default_model:/m.test(body)) {
+    const providerLine = new RegExp(`^  ${provider}:.*$`, "m");
+    if (providerLine.test(body)) {
+      return body.replace(providerLine, modelLine);
+    }
+    return body.replace(/^default_model:\s*$/m, `default_model:\n${modelLine}`);
+  }
+
+  return `${body.trimEnd()}\ndefault_model:\n${modelLine}\n  google: null\n  openai: null\n  openrouter: null\n  dashscope: null\n  replicate: null\n`;
+}
+
+export interface WriteImageGenExtendOptions {
+  /** Explicit model for selected provider; null clears override (runtime uses built-in default). */
+  model?: string | null;
+}
+
+export function writeImageGenExtendConfig(
+  workspace: string,
+  provider: ImageGenProvider,
+  options: WriteImageGenExtendOptions = {}
+): string {
   const extendDir = path.join(workspace, ".config", "baoyu-image-gen");
   fs.mkdirSync(extendDir, { recursive: true });
   const extendPath = path.join(extendDir, "EXTEND.md");
 
-  if (fs.existsSync(extendPath)) {
-    const content = fs.readFileSync(extendPath, "utf8");
-    if (/^default_provider:/m.test(content)) {
-      const updated = content.replace(
-        /^default_provider:.*$/m,
-        `default_provider: ${provider}`
-      );
-      fs.writeFileSync(extendPath, updated, "utf8");
-      return extendPath;
+  const modelOverride =
+    options.model === undefined ? undefined : options.model?.trim() || null;
+
+  if (!fs.existsSync(extendPath)) {
+    const modelByProvider: Partial<Record<ImageGenProvider, string | null>> = {};
+    if (modelOverride !== undefined) {
+      modelByProvider[provider] = modelOverride;
     }
-    const yamlMatch = content.match(/^---\s*\n([\s\S]*?)\n---/m);
-    if (yamlMatch) {
-      const front = yamlMatch[1]!.includes("default_provider:")
-        ? yamlMatch[1]!.replace(/^default_provider:.*$/m, `default_provider: ${provider}`)
-        : `${yamlMatch[1]!.trimEnd()}\ndefault_provider: ${provider}\n`;
-      const updated = content.replace(yamlMatch[0], `---\n${front}---`);
-      fs.writeFileSync(extendPath, updated, "utf8");
-      return extendPath;
-    }
-    fs.writeFileSync(
-      extendPath,
-      `---\nversion: 1\ndefault_provider: ${provider}\ndefault_quality: null\ndefault_aspect_ratio: null\ndefault_image_size: null\ndefault_model:\n  google: null\n  openai: null\n  openrouter: null\n  dashscope: null\n  replicate: null\n---\n`,
-      "utf8"
-    );
+    fs.writeFileSync(extendPath, buildImageGenExtendContent(provider, modelByProvider), "utf8");
     return extendPath;
   }
 
-  fs.writeFileSync(
-    extendPath,
-    `---\nversion: 1\ndefault_provider: ${provider}\ndefault_quality: null\ndefault_aspect_ratio: null\ndefault_image_size: null\ndefault_model:\n  google: null\n  openai: null\n  openrouter: null\n  dashscope: null\n  replicate: null\n---\n`,
-    "utf8"
-  );
+  const content = fs.readFileSync(extendPath, "utf8");
+  const yamlMatch = content.match(/^---\s*\n([\s\S]*?)\n---/m);
+  if (!yamlMatch) {
+    const modelByProvider: Partial<Record<ImageGenProvider, string | null>> = {};
+    if (modelOverride !== undefined) modelByProvider[provider] = modelOverride;
+    fs.writeFileSync(extendPath, buildImageGenExtendContent(provider, modelByProvider), "utf8");
+    return extendPath;
+  }
+
+  let body = updateExtendBodyProvider(yamlMatch[1]!, provider);
+  if (modelOverride !== undefined) {
+    body = updateExtendBodyModel(body, provider, modelOverride);
+  }
+  const updated = content.replace(yamlMatch[0], `---\n${body.trimEnd()}\n---`);
+  fs.writeFileSync(extendPath, updated, "utf8");
   return extendPath;
 }
 
