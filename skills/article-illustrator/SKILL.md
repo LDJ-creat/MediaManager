@@ -16,7 +16,16 @@ media workspace show
 media image gen --prompt "..." --image output/{slug}/fig-1.png
 ```
 
-## 目录结构约定
+## 出图降级策略
+
+按以下顺序尝试，**不要**在 API 未配置时静默跳过：
+
+1. **首选**：`media image gen` / `baoyu-image-gen`（用户已配置的 OpenAI、DashScope、Replicate 等 API）
+2. **降级**：若 API 未配置、密钥无效或调用失败，改用**宿主 Agent 内置生图工具**（如 Cursor `GenerateImage`、Claude 图像能力等），提示词仍使用 `images/prompts/{id}.md` 中的内容
+3. **终止**：若以上均不可用，**明确告知用户**「当前无法自动生成配图」，列出需配置的环境（如 `~/.config/baoyu-image-gen/.env` 或内置生图工具），**不要**伪造图片路径或留空占位
+
+```bash
+# 目录结构约定
 
 ```
 output/{slug}/

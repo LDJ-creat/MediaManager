@@ -6,24 +6,16 @@ import { stdin as input, stdout as output } from "node:process";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { JUEJIN_CREATOR_CONTENT_URL } from "./common";
+import { parseStorageStateOutputArg } from "@dsmlll/media-manager-platform-common";
+
+const skillRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function ensureDirSync(dirPath: string): void {
   fs.mkdirSync(dirPath, { recursive: true });
 }
 
-function defaultOutputPath(): string {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-  return path.resolve(__dirname, "..", ".auth", "storageState.json");
-}
-
 function parseOutputPath(args: string[]): string {
-  for (let i = 0; i < args.length; i += 1) {
-    if (args[i] === "--output" && args[i + 1]) {
-      return path.resolve(process.cwd(), args[i + 1]);
-    }
-  }
-  return defaultOutputPath();
+  return parseStorageStateOutputArg(args, skillRoot);
 }
 
 async function main(): Promise<void> {

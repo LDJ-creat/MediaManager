@@ -22,6 +22,8 @@ media workspace show
 media image gen --prompt "描述" --image output/{slug}/cover.png
 ```
 
+**MediaManager 编排降级**（由 `article-illustrator` 执行）：API 不可用时不报错中断整个流程——先尝试宿主内置生图工具；若仍不可用，向用户说明无法出图并停止该步骤。
+
 ## Script Directory
 
 **Agent Execution**:

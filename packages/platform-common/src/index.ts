@@ -124,3 +124,25 @@ export function resolveAuthFileRef(
 
   return null;
 }
+
+/** Default output for platform `auth export` scripts (respects MEDIA_AUTH_DIR). */
+export function defaultStorageStateOutputPath(skillRoot: string): string {
+  const authDir = process.env.MEDIA_AUTH_DIR?.trim();
+  if (authDir) {
+    return path.join(path.resolve(authDir), "storageState.json");
+  }
+  return path.join(skillRoot, ".auth", "storageState.json");
+}
+
+export function parseStorageStateOutputArg(
+  args: string[],
+  skillRoot: string,
+  cwd = process.cwd()
+): string {
+  for (let i = 0; i < args.length; i += 1) {
+    if (args[i] === "--output" && args[i + 1]) {
+      return path.resolve(cwd, args[i + 1]!);
+    }
+  }
+  return defaultStorageStateOutputPath(skillRoot);
+}

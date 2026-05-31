@@ -13,7 +13,7 @@
     "tsx": "^4.20.6"
   },
   "dependencies": {
-    "@dsmlll/media-manager-platform-common": "0.1.1",
+    "@dsmlll/media-manager-platform-common": "0.1.2",
     "playwright": "^1.58.2"
   }
 }
