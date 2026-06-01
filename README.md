@@ -255,6 +255,8 @@ Repo 根目录即工作区（`.media-manager/repo-marker.json`）。
 │   ├── publishing/platform/
 │   └── analytics/platform/
 └── .media-manager/
+    ├── secrets/            # 微信 / 图片 API 密钥（Mode B 由 media setup 管理）
+    ├── auth/{platform}/    # 平台登录态（Mode B 由 media <platform> auth export 管理）
     ├── news/sources.json   # RSS 源（Mode B 由 media news sources edit 管理）
     └── …
 ```
@@ -287,7 +289,7 @@ Repo 根目录即工作区（`.media-manager/repo-marker.json`）。
 |--------------|------|
 | `baoyu-image-gen` | [JimLiu/baoyu-skills · baoyu-image-gen](https://github.com/JimLiu/baoyu-skills/tree/main/skills/baoyu-image-gen) |
 | `xhs-images` | 基于 [JimLiu/baoyu-skills · baoyu-xhs-images](https://github.com/JimLiu/baoyu-skills/tree/main/skills/baoyu-xhs-images) 改造，详见 [改造说明](skills/xhs-images/ATTRIBUTION.md) |
-| `post-to-wechat`、`csdn-publish-and-data`、`juejin-publish-and-data`、`xiaohongshu-publish-and-data`、`get-wechat-data` | 微信 / CSDN / 掘金 / 小红书的自动发布与运营数据抓取，复用自 [LDJ-creat/media-skills](https://github.com/LDJ-creat/media-skills) |
+| `post-to-wechat`、`csdn-publish-and-data`、`juejin-publish-and-data`、`get-wechat-data` | 微信 / CSDN / 掘金 的自动发布与运营数据抓取，复用自本人此前的开源项目 [LDJ-creat/media-skills](https://github.com/LDJ-creat/media-skills) |
 
 ## Skills 管理
 
@@ -301,8 +303,12 @@ media skill uninstall
 
 ## 配置
 
-- 微信 / 图片 API：各 Skill 目录下 `.env`（参考 `.env.example`）
-- 平台登录态：`media csdn auth export` 等，凭证存于 `.media-manager/auth/`
+- 微信 / 图片 API：
+  - **Mode B（CLI 用户）**：推荐 `media setup` 交互配置；也可使用独立 CLI 命令——微信草稿箱 API：`media wechat config api`（写入 `.media-manager/secrets/wechat-api.env`）；图片生成 API：`media image-gen config`（写入 `.media-manager/secrets/image-gen.env` 与默认 Provider）。详见 [docs/wechat-api-setup.md](docs/wechat-api-setup.md)；完整命令见 [skills/media-manager/references/cli-contract.md](skills/media-manager/references/cli-contract.md)
+  - **Mode A（开发者）**：在对应 Skill 目录下配置 `.env`（参照 `.env.example`）——微信 API：`skills/post-to-wechat/.env`（参考 `skills/post-to-wechat/.env.example`）；图片生成 API：`skills/baoyu-image-gen/.env`（各 Provider 密钥如 `OPENAI_API_KEY`、`GOOGLE_API_KEY` 等，详见 Skill 文档）。也可使用工作区 secrets 路径（同上），优先级高于 skill 内 `.env`
+- 平台登录态：
+  - **Mode B（CLI 用户）**：推荐 `media setup` 浏览器登录导出；也可使用独立 CLI 命令——`media wechat auth export` / `media csdn auth export` / `media juejin auth export` / `media xhs auth export`，凭证存于 `.media-manager/auth/{platform}/storageState.json`。完整命令见 [skills/media-manager/references/cli-contract.md](skills/media-manager/references/cli-contract.md)
+  - **Mode A（开发者）**：运行对应 Skill 下的配置脚本获取登录凭证，例如 `skills/csdn-publish-and-data/scripts/export-storage-state.ts`（在 `scripts/` 目录执行 `npx tsx export-storage-state.ts`）。各平台脚本：`csdn-publish-and-data`、`juejin-publish-and-data`、`get-wechat-data`、`xiaohongshu-publish-and-data` 下的 `scripts/export-storage-state.ts`；也可使用 `media <platform> auth export`（输出路径与工作区一致）
 - RSS 源：
   - **Mode B（CLI 用户）**：`$WORKSPACE/.media-manager/news/sources.json`，运行 `media news sources edit` 编辑；`media news fetch` 优先读该文件，不存在时使用 CLI 内置默认源
   - **Mode A（开发者）**：可直接编辑 `skills/news-skill/references/sources.json`，或使用工作区配置（同上）
