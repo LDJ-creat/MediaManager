@@ -3,7 +3,7 @@
 ### demo
 https://github.com/user-attachments/assets/6625749e-3600-477f-9a9f-6db01e5c0a21
 
-
+**B站视频链接** ：https://www.bilibili.com/video/BV12rVD6WEcJ/?vd_source=8e03b1a6cd89d2b50af0c43b7de269ff
 
 面向 **Agent 端**（Cursor、Claude Code、OpenClaw 等）的自媒体创作与发布工具：以 Markdown 为统一内容模型，**CLI 执行确定性任务**，**Skill 编排创作流程**，覆盖选题、写作、配图、多平台发布、数据分析与复盘进化。
 
