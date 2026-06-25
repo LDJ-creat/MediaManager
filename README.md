@@ -1,24 +1,16 @@
 # MediaManager — Agent 端自媒体全链路工具
 
-### demo
-https://github.com/user-attachments/assets/6625749e-3600-477f-9a9f-6db01e5c0a21
-
-**B站视频链接** ：https://www.bilibili.com/video/BV12rVD6WEcJ/?vd_source=8e03b1a6cd89d2b50af0c43b7de269ff
+**B站演示视频**：https://www.bilibili.com/video/BV12rVD6WEcJ/?vd_source=8e03b1a6cd89d2b50af0c43b7de269ff
 
 面向 **Agent 端**（Cursor、Claude Code、OpenClaw 等）的自媒体创作与发布工具：以 Markdown 为统一内容模型，**CLI 执行确定性任务**，**Skill 编排创作流程**，覆盖选题、写作、配图、多平台发布、数据分析与复盘进化。
 
-## 赛事背景与项目定位
-
-本项目面向「多平台内容发布工具」赛题，但**不局限于传统 GUI 应用**——而是顺应当前 Agent 快速普及的趋势，采用 **CLI + Skill** 组合实现赛题要求的多平台发布能力，并进一步打通自媒体创作全链路。
-
-- **赛题范围内**：格式适配、一键（多平台）发布、可扩展架构
-- **超出赛题的价值**：RSS 选题、LLM 写作门禁、AI 配图、运营数据复盘、可进化的 personal guidance
+顺应当前 Agent 快速普及的趋势，MediaManager 不依赖传统 GUI，而是通过 **CLI + Skill** 双轨架构实现多平台发布，并打通自媒体创作全链路。
 
 ## 核心功能与亮点
 
-### 赛题能力对照
+### 多平台发布能力
 
-| 赛题要求 | MediaManager 实现 |
+| 能力 | MediaManager 实现 |
 |----------|-------------------|
 | **格式适配** | 统一写入规范 Markdown（`article.md` / `note.md`）；支持 MD 渲染的平台直接发布；微信公众号等不支持 MD 的平台经 HTML 转换后注入编辑器 |
 | **一键发布** | Agent 触发 `media wechat post` / `media csdn post` 等 CLI，一次成稿可同步多平台草稿箱 |
