@@ -52,7 +52,7 @@ type LoadedBatchTasks = {
   batchDir: string;
 };
 
-const MAX_ATTEMPTS = 3;
+const DEFAULT_MAX_ATTEMPTS = 3;
 const DEFAULT_MAX_WORKERS = 10;
 const POLL_WAIT_MS = 250;
 const DEFAULT_PROVIDER_RATE_LIMITS: Record<Provider, ProviderRateLimit> = {
@@ -63,6 +63,7 @@ const DEFAULT_PROVIDER_RATE_LIMITS: Record<Provider, ProviderRateLimit> = {
   dashscope: { concurrency: 3, startIntervalMs: 1100 },
   jimeng: { concurrency: 3, startIntervalMs: 1100 },
   seedream: { concurrency: 3, startIntervalMs: 1100 },
+  atlascloud: { concurrency: 1, startIntervalMs: 1500 },
 };
 
 function printUsage(): void {
@@ -77,7 +78,7 @@ Options:
   --image <path>            Output image path (required in single-image mode)
   --batchfile <path>        JSON batch file for multi-image generation
   --jobs <count>            Worker count for batch mode (default: auto, max from config, built-in default 10)
-  --provider google|openai|openrouter|dashscope|replicate|jimeng|seedream  Force provider (auto-detect by default)
+  --provider google|openai|openrouter|dashscope|replicate|jimeng|seedream|atlascloud  Force provider (auto-detect by default)
   -m, --model <id>          Model ID
   --ar <ratio>              Aspect ratio (e.g., 16:9, 1:1, 4:3)
   --size <WxH>              Size (e.g., 1024x1024)
@@ -118,6 +119,7 @@ Environment variables:
   JIMENG_ACCESS_KEY_ID      Jimeng Access Key ID
   JIMENG_SECRET_ACCESS_KEY  Jimeng Secret Access Key
   ARK_API_KEY               Seedream/Ark API key
+  ATLASCLOUD_API_KEY        Atlas Cloud API key
   OPENAI_IMAGE_MODEL        Default OpenAI model (gpt-image-1.5)
   OPENROUTER_IMAGE_MODEL    Default OpenRouter model (google/gemini-3.1-flash-image-preview)
   GOOGLE_IMAGE_MODEL        Default Google model (gemini-3-pro-image-preview)
@@ -125,6 +127,7 @@ Environment variables:
   REPLICATE_IMAGE_MODEL     Default Replicate model (google/nano-banana-pro)
   JIMENG_IMAGE_MODEL        Default Jimeng model (jimeng_t2i_v40)
   SEEDREAM_IMAGE_MODEL      Default Seedream model (doubao-seedream-5-0-260128)
+  ATLASCLOUD_IMAGE_MODEL    Default Atlas Cloud model (google/nano-banana-2/text-to-image)
   OPENAI_BASE_URL           Custom OpenAI endpoint
   OPENAI_IMAGE_USE_CHAT     Use /chat/completions instead of /images/generations (true|false)
   OPENROUTER_BASE_URL       Custom OpenRouter endpoint
@@ -135,6 +138,7 @@ Environment variables:
   REPLICATE_BASE_URL        Custom Replicate endpoint
   JIMENG_BASE_URL           Custom Jimeng endpoint
   SEEDREAM_BASE_URL         Custom Seedream endpoint
+  ATLASCLOUD_BASE_URL       Custom Atlas Cloud endpoint
   BAOYU_IMAGE_GEN_MAX_WORKERS  Override batch worker cap
   BAOYU_IMAGE_GEN_<PROVIDER>_CONCURRENCY  Override provider concurrency
   BAOYU_IMAGE_GEN_<PROVIDER>_START_INTERVAL_MS  Override provider start gap in ms
@@ -240,7 +244,8 @@ export function parseArgs(argv: string[]): CliArgs {
         v !== "dashscope" &&
         v !== "replicate" &&
         v !== "jimeng" &&
-        v !== "seedream"
+        v !== "seedream" &&
+        v !== "atlascloud"
       ) {
         throw new Error(`Invalid provider: ${v}`);
       }
@@ -377,6 +382,7 @@ export function parseSimpleYaml(yaml: string): Partial<ExtendConfig> {
           replicate: null,
           jimeng: null,
           seedream: null,
+          atlascloud: null,
         };
         currentKey = "default_model";
         currentProvider = null;
@@ -402,7 +408,8 @@ export function parseSimpleYaml(yaml: string): Partial<ExtendConfig> {
           key === "dashscope" ||
           key === "replicate" ||
           key === "jimeng" ||
-          key === "seedream"
+          key === "seedream" ||
+          key === "atlascloud"
         )
       ) {
         config.batch ??= {};
@@ -418,7 +425,8 @@ export function parseSimpleYaml(yaml: string): Partial<ExtendConfig> {
           key === "dashscope" ||
           key === "replicate" ||
           key === "jimeng" ||
-          key === "seedream"
+          key === "seedream" ||
+          key === "atlascloud"
         )
       ) {
         const cleaned = value.replace(/['"]/g, "");
@@ -509,9 +517,10 @@ export function getConfiguredProviderRateLimits(
     dashscope: { ...DEFAULT_PROVIDER_RATE_LIMITS.dashscope },
     jimeng: { ...DEFAULT_PROVIDER_RATE_LIMITS.jimeng },
     seedream: { ...DEFAULT_PROVIDER_RATE_LIMITS.seedream },
+    atlascloud: { ...DEFAULT_PROVIDER_RATE_LIMITS.atlascloud },
   };
 
-  for (const provider of ["replicate", "google", "openai", "openrouter", "dashscope", "jimeng", "seedream"] as Provider[]) {
+  for (const provider of ["replicate", "google", "openai", "openrouter", "dashscope", "jimeng", "seedream", "atlascloud"] as Provider[]) {
     const envPrefix = `BAOYU_IMAGE_GEN_${provider.toUpperCase()}`;
     const extendLimit = extendConfig.batch?.provider_limits?.[provider];
     configured[provider] = {
@@ -581,6 +590,7 @@ export function detectProvider(args: CliArgs): Provider {
   const hasReplicate = !!process.env.REPLICATE_API_TOKEN;
   const hasJimeng = !!(process.env.JIMENG_ACCESS_KEY_ID && process.env.JIMENG_SECRET_ACCESS_KEY);
   const hasSeedream = !!process.env.ARK_API_KEY;
+  const hasAtlascloud = !!process.env.ATLASCLOUD_API_KEY;
 
   if (args.referenceImages.length > 0) {
     if (hasGoogle) return "google";
@@ -600,13 +610,14 @@ export function detectProvider(args: CliArgs): Provider {
     hasReplicate && "replicate",
     hasJimeng && "jimeng",
     hasSeedream && "seedream",
+    hasAtlascloud && "atlascloud",
   ].filter(Boolean) as Provider[];
 
   if (available.length === 1) return available[0]!;
   if (available.length > 1) return available[0]!;
 
   throw new Error(
-    "No API key found. Set GOOGLE_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY, OPENROUTER_API_KEY, DASHSCOPE_API_KEY, REPLICATE_API_TOKEN, JIMENG keys, or ARK_API_KEY.\n" +
+    "No API key found. Set GOOGLE_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY, OPENROUTER_API_KEY, DASHSCOPE_API_KEY, REPLICATE_API_TOKEN, JIMENG keys, ARK_API_KEY, or ATLASCLOUD_API_KEY.\n" +
       "Create baoyu-image-gen/.env (skill root) or <cwd>/.config/baoyu-image-gen/.env (project) with your keys."
   );
 }
@@ -642,6 +653,11 @@ export function isRetryableGenerationError(error: unknown): boolean {
   return !nonRetryableMarkers.some((marker) => msg.includes(marker));
 }
 
+export function getMaxGenerationAttempts(provider: Provider): number {
+  // Atlas Cloud generation POSTs can create billable tasks, so never retry them.
+  return provider === "atlascloud" ? 1 : DEFAULT_MAX_ATTEMPTS;
+}
+
 async function loadProviderModule(provider: Provider): Promise<ProviderModule> {
   if (provider === "google") return (await import("./providers/google")) as ProviderModule;
   if (provider === "dashscope") return (await import("./providers/dashscope")) as ProviderModule;
@@ -649,6 +665,7 @@ async function loadProviderModule(provider: Provider): Promise<ProviderModule> {
   if (provider === "openrouter") return (await import("./providers/openrouter")) as ProviderModule;
   if (provider === "jimeng") return (await import("./providers/jimeng")) as ProviderModule;
   if (provider === "seedream") return (await import("./providers/seedream")) as ProviderModule;
+  if (provider === "atlascloud") return (await import("./providers/atlascloud")) as ProviderModule;
   return (await import("./providers/openai")) as ProviderModule;
 }
 
@@ -677,6 +694,7 @@ function getModelForProvider(
     if (provider === "replicate" && extendConfig.default_model.replicate) return extendConfig.default_model.replicate;
     if (provider === "jimeng" && extendConfig.default_model.jimeng) return extendConfig.default_model.jimeng;
     if (provider === "seedream" && extendConfig.default_model.seedream) return extendConfig.default_model.seedream;
+    if (provider === "atlascloud" && extendConfig.default_model.atlascloud) return extendConfig.default_model.atlascloud;
   }
   return providerModule.getDefaultModel();
 }
@@ -803,8 +821,9 @@ async function generatePreparedTask(task: PreparedTask): Promise<TaskResult> {
     `Switch model: --model <id> | EXTEND.md default_model.${task.provider} | env ${task.provider.toUpperCase()}_IMAGE_MODEL`
   );
 
+  const maxAttempts = getMaxGenerationAttempts(task.provider);
   let attempts = 0;
-  while (attempts < MAX_ATTEMPTS) {
+  while (attempts < maxAttempts) {
     attempts += 1;
     try {
       const imageData = await task.providerModule.generateImage(task.prompt, task.model, task.args);
@@ -820,9 +839,9 @@ async function generatePreparedTask(task: PreparedTask): Promise<TaskResult> {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      const canRetry = attempts < MAX_ATTEMPTS && isRetryableGenerationError(error);
+      const canRetry = attempts < maxAttempts && isRetryableGenerationError(error);
       if (canRetry) {
-        console.error(`[${task.id}] Attempt ${attempts}/${MAX_ATTEMPTS} failed, retrying...`);
+        console.error(`[${task.id}] Attempt ${attempts}/${maxAttempts} failed, retrying...`);
         continue;
       }
       return {
@@ -843,7 +862,7 @@ async function generatePreparedTask(task: PreparedTask): Promise<TaskResult> {
     model: task.model,
     outputPath: task.outputPath,
     success: false,
-    attempts: MAX_ATTEMPTS,
+    attempts: maxAttempts,
     error: "Unknown failure",
   };
 }
@@ -892,7 +911,7 @@ async function runBatchTasks(
   const acquireProvider = createProviderGate(providerRateLimits);
   const workerCount = getWorkerCount(tasks.length, jobs, maxWorkers);
   console.error(`Batch mode: ${tasks.length} tasks, ${workerCount} workers, parallel mode enabled.`);
-  for (const provider of ["replicate", "google", "openai", "openrouter", "dashscope", "jimeng", "seedream"] as Provider[]) {
+  for (const provider of ["replicate", "google", "openai", "openrouter", "dashscope", "jimeng", "seedream", "atlascloud"] as Provider[]) {
     const limit = providerRateLimits[provider];
     console.error(`- ${provider}: concurrency=${limit.concurrency}, startIntervalMs=${limit.startIntervalMs}`);
   }

@@ -1,6 +1,6 @@
 ---
 name: baoyu-image-gen
-description: AI image generation with OpenAI, Google, OpenRouter, DashScope, Jimeng, Seedream and Replicate APIs. Supports text-to-image, reference images, aspect ratios, and batch generation from saved prompt files. Sequential by default; use batch parallel generation when the user already has multiple prompts or wants stable multi-image throughput. Use when user asks to generate, create, or draw images.
+description: AI image generation with OpenAI, Google, OpenRouter, DashScope, Jimeng, Seedream, Replicate and Atlas Cloud APIs. Supports text-to-image, reference images, aspect ratios, and batch generation from saved prompt files. Sequential by default; use batch parallel generation when the user already has multiple prompts or wants stable multi-image throughput. Use when user asks to generate, create, or draw images.
 version: 1.56.2
 metadata:
   openclaw:
@@ -111,6 +111,9 @@ ${BUN_X} {baseDir}/scripts/main.ts --prompt "A cat" --image out.png --provider r
 # Replicate with specific model
 ${BUN_X} {baseDir}/scripts/main.ts --prompt "A cat" --image out.png --provider replicate --model google/nano-banana
 
+# Atlas Cloud (text-to-image)
+${BUN_X} {baseDir}/scripts/main.ts --prompt "A cat" --image out.png --provider atlascloud
+
 # Batch mode with saved prompt files
 ${BUN_X} {baseDir}/scripts/main.ts --batchfile batch.json
 
@@ -154,13 +157,13 @@ Paths in `promptFiles`, `image`, and `ref` are resolved relative to the batch fi
 | `--image <path>`                                                                | Output image path (required in single-image mode)                                                                                                              |
 | `--batchfile <path>`                                                            | JSON batch file for multi-image generation                                                                                                                     |
 | `--jobs <count>`                                                                | Worker count for batch mode (default: auto, max from config, built-in default 10)                                                                              |
-| `--provider google\|openai\|openrouter\|dashscope\|jimeng\|seedream\|replicate` | Force provider (default: auto-detect)                                                                                                                          |
+| `--provider google\|openai\|openrouter\|dashscope\|jimeng\|seedream\|replicate\|atlascloud` | Force provider (default: auto-detect)                                                                                                               |
 | `--model <id>`, `-m`                                                            | Model ID (Google: `gemini-3-pro-image-preview`; OpenAI: `gpt-image-1.5`; OpenRouter: `google/gemini-3.1-flash-image-preview`; DashScope: `qwen-image-2.0-pro`) |
 | `--ar <ratio>`                                                                  | Aspect ratio (e.g., `16:9`, `1:1`, `4:3`)                                                                                                                      |
 | `--size <WxH>`                                                                  | Size (e.g., `1024x1024`)                                                                                                                                       |
 | `--quality normal\|2k`                                                          | Quality preset (default: `2k`)                                                                                                                                 |
-| `--imageSize 1K\|2K\|4K`                                                        | Image size for Google/OpenRouter (default: from quality)                                                                                                       |
-| `--ref <files...>`                                                              | Reference images. Supported by Google multimodal, OpenAI GPT Image edits, OpenRouter multimodal models, and Replicate. Not supported by Jimeng or Seedream     |
+| `--imageSize 1K\|2K\|4K`                                                        | Image size for Google/OpenRouter/Atlas Cloud (default: from quality)                                                                                           |
+| `--ref <files...>`                                                              | Reference images. Supported by Google multimodal, OpenAI GPT Image edits, OpenRouter multimodal models, and Replicate. Not supported by Jimeng, Seedream, or Atlas Cloud |
 | `--n <count>`                                                                   | Number of images                                                                                                                                               |
 | `--json`                                                                        | JSON output                                                                                                                                                    |
 
@@ -176,6 +179,7 @@ Paths in `promptFiles`, `image`, and `ref` are resolved relative to the batch fi
 | `JIMENG_ACCESS_KEY_ID`                         | Jimeng (即梦) Volcengine access key                                             |
 | `JIMENG_SECRET_ACCESS_KEY`                     | Jimeng (即梦) Volcengine secret key                                             |
 | `ARK_API_KEY`                                  | Seedream (豆包) Volcengine ARK API key                                          |
+| `ATLASCLOUD_API_KEY`                           | Atlas Cloud API key                                                             |
 | `OPENAI_IMAGE_MODEL`                           | OpenAI model override                                                           |
 | `OPENROUTER_IMAGE_MODEL`                       | OpenRouter model override (default: `google/gemini-3.1-flash-image-preview`)    |
 | `GOOGLE_IMAGE_MODEL`                           | Google model override                                                           |
@@ -183,6 +187,7 @@ Paths in `promptFiles`, `image`, and `ref` are resolved relative to the batch fi
 | `REPLICATE_IMAGE_MODEL`                        | Replicate model override (default: google/nano-banana-pro)                      |
 | `JIMENG_IMAGE_MODEL`                           | Jimeng model override (default: jimeng_t2i_v40)                                 |
 | `SEEDREAM_IMAGE_MODEL`                         | Seedream model override (default: doubao-seedream-5-0-260128)                   |
+| `ATLASCLOUD_IMAGE_MODEL`                       | Atlas Cloud model override (default: `google/nano-banana-2/text-to-image`)      |
 | `OPENAI_BASE_URL`                              | Custom OpenAI endpoint                                                          |
 | `OPENROUTER_BASE_URL`                          | Custom OpenRouter endpoint (default: `https://openrouter.ai/api/v1`)            |
 | `OPENROUTER_HTTP_REFERER`                      | Optional app/site URL for OpenRouter attribution                                |
@@ -193,6 +198,7 @@ Paths in `promptFiles`, `image`, and `ref` are resolved relative to the batch fi
 | `JIMENG_BASE_URL`                              | Custom Jimeng endpoint (default: `https://visual.volcengineapi.com`)            |
 | `JIMENG_REGION`                                | Jimeng region (default: `cn-north-1`)                                           |
 | `SEEDREAM_BASE_URL`                            | Custom Seedream endpoint (default: `https://ark.cn-beijing.volces.com/api/v3`)  |
+| `ATLASCLOUD_BASE_URL`                          | Custom Atlas Cloud endpoint (default: `https://api.atlascloud.ai/api/v1`)       |
 | `BAOYU_IMAGE_GEN_MAX_WORKERS`                  | Override batch worker cap                                                       |
 | `BAOYU_IMAGE_GEN_<PROVIDER>_CONCURRENCY`       | Override provider concurrency, e.g. `BAOYU_IMAGE_GEN_REPLICATE_CONCURRENCY`     |
 | `BAOYU_IMAGE_GEN_<PROVIDER>_START_INTERVAL_MS` | Override provider start gap, e.g. `BAOYU_IMAGE_GEN_REPLICATE_START_INTERVAL_MS` |
@@ -302,6 +308,19 @@ ${BUN_X} {baseDir}/scripts/main.ts --prompt "A cat" --image out.png --provider r
 3. Only one API key available → use that provider
 4. Multiple available → default to Google
 
+### Atlas Cloud
+
+Atlas Cloud is an optional text-to-image provider. The built-in model is
+`google/nano-banana-2/text-to-image`; override it with `--model`,
+`default_model.atlascloud`, or `ATLASCLOUD_IMAGE_MODEL` only after checking the
+model's current input schema. `--ar`, `--quality`, and `--imageSize` map to the
+model's `aspect_ratio` and `resolution` fields. Reference images are not sent by
+this provider.
+
+Atlas Cloud generation submissions are billable asynchronous tasks. The provider
+submits each task exactly once, never retries the generation POST, and only uses
+bounded polling on the prediction endpoint.
+
 ## Quality Presets
 
 | Preset         | Google imageSize | OpenAI Size | OpenRouter size | Replicate resolution | Use Case                            |
@@ -350,13 +369,13 @@ Parallel behavior:
 - Default worker count is automatic, capped by config, built-in default 10
 - Provider-specific throttling is applied only in batch mode, and the built-in defaults are tuned for faster throughput while still avoiding obvious RPM bursts
 - You can override worker count with `--jobs <count>`
-- Each image retries automatically up to 3 attempts
+- Each image retries automatically up to 3 attempts, except Atlas Cloud tasks, which submit once
 - Final output includes success count, failure count, and per-image failure reasons
 
 ## Error Handling
 
 - Missing API key → error with setup instructions
-- Generation failure → auto-retry up to 3 attempts per image
+- Generation failure → auto-retry up to 3 attempts per image; Atlas Cloud generation POSTs are never retried
 - Invalid aspect ratio → warning, proceed with default
 - Reference images with unsupported provider/model → error with fix hint
 
