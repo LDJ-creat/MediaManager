@@ -10,6 +10,7 @@ import {
   detectProvider,
   getConfiguredMaxWorkers,
   getConfiguredProviderRateLimits,
+  getMaxGenerationAttempts,
   getWorkerCount,
   isRetryableGenerationError,
   loadBatchTasks,
@@ -101,6 +102,11 @@ test("parseArgs parses the main image-gen CLI flags", () => {
   assert.equal(args.n, 3);
   assert.equal(args.jobs, 5);
   assert.equal(args.json, true);
+});
+
+test("parseArgs accepts Atlas Cloud as an explicit provider", () => {
+  const args = parseArgs(["--provider", "atlascloud", "--prompt", "A cat", "--image", "cat.png"]);
+  assert.equal(args.provider, "atlascloud");
 });
 
 test("parseArgs falls back to positional prompt and rejects invalid provider", () => {
@@ -302,4 +308,6 @@ test("path normalization, worker count, and retry classification follow expected
 
   assert.equal(isRetryableGenerationError(new Error("API error (401): denied")), false);
   assert.equal(isRetryableGenerationError(new Error("socket hang up")), true);
+  assert.equal(getMaxGenerationAttempts("atlascloud"), 1);
+  assert.equal(getMaxGenerationAttempts("google"), 3);
 });

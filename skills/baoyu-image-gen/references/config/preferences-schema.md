@@ -11,7 +11,7 @@ description: EXTEND.md YAML schema for baoyu-image-gen user preferences
 ---
 version: 1
 
-default_provider: null      # google|openai|openrouter|dashscope|replicate|null (null = auto-detect)
+default_provider: null      # google|openai|openrouter|dashscope|replicate|jimeng|seedream|atlascloud|null
 
 default_quality: null       # normal|2k|null (null = use default: 2k)
 
@@ -25,6 +25,9 @@ default_model:
   openrouter: null          # e.g., "google/gemini-3.1-flash-image-preview"
   dashscope: null           # e.g., "qwen-image-2.0-pro"
   replicate: null           # e.g., "google/nano-banana-pro"
+  jimeng: null
+  seedream: null
+  atlascloud: null          # e.g., "google/nano-banana-2/text-to-image"
 
 batch:
   max_workers: 10
@@ -44,6 +47,9 @@ batch:
     dashscope:
       concurrency: 3
       start_interval_ms: 1100
+    atlascloud:
+      concurrency: 1
+      start_interval_ms: 1500
 ---
 ```
 
@@ -61,6 +67,7 @@ batch:
 | `default_model.openrouter` | string\|null | null | OpenRouter default model |
 | `default_model.dashscope` | string\|null | null | DashScope default model |
 | `default_model.replicate` | string\|null | null | Replicate default model |
+| `default_model.atlascloud` | string\|null | null | Atlas Cloud default model |
 | `batch.max_workers` | int\|null | 10 | Batch worker cap |
 | `batch.provider_limits.<provider>.concurrency` | int\|null | provider default | Max simultaneous requests per provider |
 | `batch.provider_limits.<provider>.start_interval_ms` | int\|null | provider default | Minimum gap between request starts per provider |
@@ -90,6 +97,7 @@ default_model:
   openrouter: "google/gemini-3.1-flash-image-preview"
   dashscope: "qwen-image-2.0-pro"
   replicate: "google/nano-banana-pro"
+  atlascloud: "google/nano-banana-2/text-to-image"
 batch:
   max_workers: 10
   provider_limits:

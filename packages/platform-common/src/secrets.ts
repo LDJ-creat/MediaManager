@@ -13,7 +13,7 @@ export const IMAGE_GEN_ENV = "image-gen.env";
 export const WECHAT_APP_ID_KEY = "WECHAT_APP_ID";
 export const WECHAT_APP_SECRET_KEY = "WECHAT_APP_SECRET";
 
-export type ImageGenProvider = "google" | "openai" | "openrouter" | "dashscope" | "replicate";
+export type ImageGenProvider = "google" | "openai" | "openrouter" | "dashscope" | "replicate" | "atlascloud";
 
 export const IMAGE_GEN_PROVIDER_KEYS: Record<ImageGenProvider, string[]> = {
   google: ["GOOGLE_API_KEY", "GEMINI_API_KEY"],
@@ -21,6 +21,7 @@ export const IMAGE_GEN_PROVIDER_KEYS: Record<ImageGenProvider, string[]> = {
   openrouter: ["OPENROUTER_API_KEY"],
   dashscope: ["DASHSCOPE_API_KEY"],
   replicate: ["REPLICATE_API_TOKEN"],
+  atlascloud: ["ATLASCLOUD_API_KEY"],
 };
 
 /** Built-in defaults aligned with baoyu-image-gen provider modules. */
@@ -30,6 +31,7 @@ export const IMAGE_GEN_DEFAULT_MODELS: Record<ImageGenProvider, string> = {
   openrouter: "google/gemini-3.1-flash-image-preview",
   dashscope: "qwen-image-2.0-pro",
   replicate: "google/nano-banana-pro",
+  atlascloud: "google/nano-banana-2/text-to-image",
 };
 
 export const IMAGE_GEN_MODEL_ENV_KEYS: Record<ImageGenProvider, string> = {
@@ -38,6 +40,7 @@ export const IMAGE_GEN_MODEL_ENV_KEYS: Record<ImageGenProvider, string> = {
   openrouter: "OPENROUTER_IMAGE_MODEL",
   dashscope: "DASHSCOPE_IMAGE_MODEL",
   replicate: "REPLICATE_IMAGE_MODEL",
+  atlascloud: "ATLASCLOUD_IMAGE_MODEL",
 };
 
 export function getImageGenDefaultModel(
@@ -384,7 +387,7 @@ function updateExtendBodyModel(
     return body.replace(/^default_model:\s*$/m, `default_model:\n${modelLine}`);
   }
 
-  return `${body.trimEnd()}\ndefault_model:\n${modelLine}\n  google: null\n  openai: null\n  openrouter: null\n  dashscope: null\n  replicate: null\n`;
+  return `${body.trimEnd()}\ndefault_model:\n${modelLine}\n  google: null\n  openai: null\n  openrouter: null\n  dashscope: null\n  replicate: null\n  atlascloud: null\n`;
 }
 
 export interface WriteImageGenExtendOptions {

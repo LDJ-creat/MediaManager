@@ -53,6 +53,8 @@ options:
     description: "Alibaba Cloud - Qwen-Image, strong Chinese/English text rendering"
   - label: "Replicate"
     description: "Community models - nano-banana-pro, flexible model selection"
+  - label: "Atlas Cloud"
+    description: "Unified asynchronous image API with selectable Atlas Cloud models"
 ```
 
 ### Question 2: Default Google Model
@@ -133,6 +135,9 @@ default_model:
   openrouter: [selected openrouter model or null]
   dashscope: null
   replicate: null
+  jimeng: null
+  seedream: null
+  atlascloud: null
 ---
 ```
 
@@ -233,6 +238,9 @@ default_model:
   openrouter: [value or null]
   dashscope: [value or null]
   replicate: [value or null]
+  jimeng: [value or null]
+  seedream: [value or null]
+  atlascloud: [value or null]
 ```
 
 Only set the selected provider's model; leave others as their current value or null.

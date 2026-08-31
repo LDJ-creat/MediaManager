@@ -1,4 +1,4 @@
-export type Provider = "google" | "openai" | "openrouter" | "dashscope" | "replicate" | "jimeng" | "seedream";
+export type Provider = "google" | "openai" | "openrouter" | "dashscope" | "replicate" | "jimeng" | "seedream" | "atlascloud";
 export type Quality = "normal" | "2k";
 
 export type CliArgs = {
@@ -55,6 +55,7 @@ export type ExtendConfig = {
     replicate: string | null;
     jimeng: string | null;
     seedream: string | null;
+    atlascloud: string | null;
   };
   batch?: {
     max_workers?: number | null;

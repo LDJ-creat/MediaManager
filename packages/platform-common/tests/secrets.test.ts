@@ -105,6 +105,7 @@ test("getImageGenDefaultModel returns built-in default per provider", () => {
   assert.equal(getImageGenDefaultModel("google"), "gemini-3-pro-image-preview");
   assert.equal(getImageGenDefaultModel("dashscope"), "qwen-image-2.0-pro");
   assert.equal(getImageGenDefaultModel("openrouter"), "google/gemini-3.1-flash-image-preview");
+  assert.equal(getImageGenDefaultModel("atlascloud"), "google/nano-banana-2/text-to-image");
 });
 
 test("writeImageGenExtendConfig stores custom default_model for provider", () => {
@@ -145,6 +146,19 @@ test("getImageGenStatus accepts GEMINI_API_KEY only", () => {
   const status = getImageGenStatus(ws);
   assert.equal(status.configured, true);
   assert.equal(status.provider, "google");
+});
+
+test("getImageGenStatus supports Atlas Cloud workspace credentials", () => {
+  const ws = path.join(tmpRoot, "ws-atlascloud");
+  writeImageGenExtendProvider(ws, "atlascloud");
+  writeSecretsFile(
+    ws,
+    IMAGE_GEN_ENV,
+    buildImageGenSecretValues("atlascloud", "atlas-key"),
+  );
+  const status = getImageGenStatus(ws);
+  assert.equal(status.configured, true);
+  assert.equal(status.provider, "atlascloud");
 });
 
 if (process.platform !== "win32") {

@@ -26,6 +26,7 @@ const IMAGE_GEN_PROVIDERS: { key: ImageGenProvider; label: string; hint: string 
   { key: "openai", label: "OpenAI", hint: "OPENAI_API_KEY" },
   { key: "openrouter", label: "OpenRouter", hint: "OPENROUTER_API_KEY" },
   { key: "replicate", label: "Replicate", hint: "REPLICATE_API_TOKEN" },
+  { key: "atlascloud", label: "Atlas Cloud", hint: "ATLASCLOUD_API_KEY" },
 ];
 
 export function shouldSkipSecretsSetup(flags: Record<string, string | boolean>): boolean {
@@ -128,7 +129,9 @@ export async function promptImageGenSetup(workspace: string): Promise<void> {
     console.log(`    ${ui.bold(String(i + 1))}. ${p.label}  ${ui.dim(`(${p.hint})`)}`);
   });
 
-  const choice = await promptLine(`  ${ui.bold("Provider")} ${ui.dim("[1-5，默认 1]")} `);
+  const choice = await promptLine(
+    `  ${ui.bold("Provider")} ${ui.dim(`[1-${IMAGE_GEN_PROVIDERS.length}，默认 1]`)} `
+  );
   const index = choice ? Number.parseInt(choice, 10) - 1 : 0;
   const provider = IMAGE_GEN_PROVIDERS[index]?.key ?? "google";
   const providerMeta = IMAGE_GEN_PROVIDERS.find((p) => p.key === provider)!;
